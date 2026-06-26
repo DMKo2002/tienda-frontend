@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Items requeridos' }, { status: 400 })
     }
 
-    // Obtener access token del tenant
+    // Obtener access token del tenant desde store_config
     const supabase = await createServerSupabase()
     const { data: config } = await supabase
       .from('store_config')
@@ -25,13 +25,16 @@ export async function POST(req: NextRequest) {
 
     const accessToken = config?.mp_access_token
     if (!accessToken) {
-      return NextResponse.json({ error: 'Configurá tu Access Token de MercadoPago en Panel Admin → Mi tienda → Medios de pago' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Configurá tu Access Token de MercadoPago en Panel Admin → Mi tienda → Medios de pago' },
+        { status: 400 }
+      )
     }
 
     const client = new MercadoPagoConfig({ accessToken })
     const preference = new Preference(client)
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tienda-frontend-orpin.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     const isProduction = baseUrl.startsWith('https')
 
     const result = await preference.create({
