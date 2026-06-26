@@ -99,11 +99,16 @@ export async function POST(req: NextRequest) {
     // Email de bienvenida (no bloqueante)
     const storeUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     const { data: tenantData } = await supabase.from('tenants').select('name').eq('id', TENANT_ID()).single()
-    const storeName = (tenantData as any)?.name ?? 'Tienda'
+    const { data: configData } = await supabase.from('store_config').select('email_from_name, reply_to').eq('tenant_id', TENANT_ID()).single()
+    const storeName    = (tenantData as any)?.name ?? 'Tienda'
+    const emailFromName = (configData as any)?.email_from_name ?? storeName
+    const replyTo       = (configData as any)?.reply_to ?? undefined
     sendEmail({
       to: email,
       subject: `Bienvenida a ${storeName}`,
       html: emailBienvenidaCliente({ storeName, firstName: nombre, storeUrl }),
+      fromName: emailFromName,
+      replyTo,
     }).catch(() => {})
 
     return NextResponse.json({ ok: true, confirmacion: !authData.session })

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     // ── 1. Fetch store config (envío + email notificación) ────────────────────
     const [{ data: storeConf }, { data: tenant }] = await Promise.all([
-      supabase.from('store_config').select('custom_shipping, notification_email').eq('tenant_id', TENANT_ID()).single(),
+      supabase.from('store_config').select('custom_shipping, notification_email, email_from_name, reply_to').eq('tenant_id', TENANT_ID()).single(),
       supabase.from('tenants').select('name').eq('id', TENANT_ID()).single(),
     ])
 
@@ -228,15 +228,20 @@ export async function POST(req: NextRequest) {
       paymentMethod,
     }
 
+    const emailFromName    = (storeConf as any)?.email_from_name ?? storeName
+    const replyTo          = (storeConf as any)?.reply_to ?? undefined
+    const ownerEmail       = (storeConf as any)?.notification_email
+
     // Al cliente
     sendEmail({
       to: email.trim(),
       subject: `Tu pedido #${order.id.slice(0, 8).toUpperCase()} fue recibido — ${storeName}`,
       html: emailConfirmacionCliente(emailPayload),
+      fromName: emailFromName,
+      replyTo,
     }).catch(e => console.error('[email cliente]', e))
 
     // Al dueño
-    const ownerEmail = (storeConf as any)?.notification_email
     if (ownerEmail) {
       sendEmail({
         to: ownerEmail,
@@ -250,6 +255,7 @@ export async function POST(req: NextRequest) {
           addressProvince: addressProvince || null,
           addressZip: addressZip || null,
         }),
+        fromName: emailFromName,
       }).catch(e => console.error('[email dueño]', e))
     }
 

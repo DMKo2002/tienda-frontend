@@ -11,18 +11,24 @@ export async function sendEmail({
   subject,
   html,
   from,
+  fromName,
+  replyTo,
 }: {
   to: string
   subject: string
   html: string
   from?: string
+  fromName?: string   // nombre del remitente, ej: "Connors Store"
+  replyTo?: string    // reply-to, ej: contacto@connors.com
 }) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.warn('[email] RESEND_API_KEY no configurada — email omitido')
     return { ok: false }
   }
-  const sender = from ?? process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
+  const baseFrom = from ?? process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
+  // Si hay nombre de remitente: "Connors Store <noreply@creart.com>"
+  const sender = fromName ? `${fromName} <${baseFrom}>` : baseFrom
   try {
     const res = await fetch(RESEND_API_URL, {
       method: 'POST',
@@ -30,7 +36,13 @@ export async function sendEmail({
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from: sender, to, subject, html }),
+      body: JSON.stringify({
+        from: sender,
+        to,
+        subject,
+        html,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      }),
     })
     if (!res.ok) console.error('[email] Resend error:', await res.text())
     return { ok: res.ok }
