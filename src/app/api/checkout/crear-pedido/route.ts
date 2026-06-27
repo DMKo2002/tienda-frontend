@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
         recipient: email.trim(),
         subject: `Confirmación pedido #${order.id.slice(0, 8).toUpperCase()}`,
         status: ok ? 'sent' : 'failed',
-      }).catch(() => {})
+      })
     }).catch(e => console.error('[email cliente]', e))
 
     // Al dueño
@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
           recipient: ownerEmail,
           subject: `Nuevo pedido #${order.id.slice(0, 8).toUpperCase()} — ${storeName}`,
           status: ok ? 'sent' : 'failed',
-        }).catch(() => {})
+        })
       }).catch(e => console.error('[email dueño]', e))
     }
 

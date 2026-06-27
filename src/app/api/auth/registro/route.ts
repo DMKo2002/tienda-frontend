@@ -33,9 +33,13 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabase()
     const tenantId = TENANT_ID()
 
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get('host')}`
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: `${nombre} ${apellido ?? ''}`.trim(), tipo } },
+      options: {
+        data: { full_name: `${nombre} ${apellido ?? ''}`.trim(), tipo },
+        emailRedirectTo: `${siteUrl}/auth/callback`,
+      },
     })
 
     let userId: string
