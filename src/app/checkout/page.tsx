@@ -21,40 +21,66 @@ export default function CheckoutPage() {
   const [storeConfig, setStoreConfig] = useState<any>(null)
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null)
   const [orderTotal, setOrderTotal] = useState(0)
+  const [emailLocked, setEmailLocked] = useState(false)
 
-  const [fullName, setFullName] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [apellido, setApellido] = useState('')
+  const [cuil, setCuil] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [addressStreet, setAddressStreet] = useState('')
   const [addressCity, setAddressCity] = useState('')
   const [addressProvince, setAddressProvince] = useState('')
   const [addressZip, setAddressZip] = useState('')
+  const [country, setCountry] = useState('Argentina')
   const [shippingMethod, setShippingMethod] = useState('')
   const [shippingCost, setShippingCost] = useState(0)
   const [notes, setNotes] = useState('')
   const [copied, setCopied] = useState<'alias' | 'cbu' | null>(null)
 
   useEffect(() => {
+    // Cargar config de la tienda
     supabase.from('store_config')
       .select('mp_enabled, transfer_enabled, transfer_cbu, transfer_alias, whatsapp_number, min_order_amount, custom_shipping')
       .eq('tenant_id', TENANT_ID())
       .single()
       .then(({ data }) => {
         setStoreConfig(data)
-        // Auto-select first active shipping method
         const methods = ((data as any)?.custom_shipping ?? []).filter((m: any) => m.active && m.name)
         if (methods.length > 0) {
           setShippingMethod('custom_0')
           setShippingCost(methods[0].price ?? 0)
         }
       })
+
+    // Pre-llenar datos del usuario registrado
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      setEmail(user.email ?? '')
+      setEmailLocked(true)
+
+      const { data: cust } = await supabase
+        .from('customers')
+        .select('full_name, last_name, cuit, phone, address_street, address_city, address_province')
+        .eq('email', user.email ?? '')
+        .eq('tenant_id', TENANT_ID())
+        .maybeSingle()
+
+      if (cust) {
+        if (cust.full_name) setNombre(cust.full_name)
+        if (cust.last_name) setApellido(cust.last_name)
+        if (cust.cuit) setCuil(cust.cuit)
+        if (cust.phone) setPhone(cust.phone)
+        if (cust.address_street) setAddressStreet(cust.address_street)
+        if (cust.address_city) setAddressCity(cust.address_city)
+        if (cust.address_province) setAddressProvince(cust.address_province)
+      }
+    })
   }, [])
 
   const activeCustomMethods: any[] = ((storeConfig as any)?.custom_shipping ?? []).filter((m: any) => m.active && m.name)
   const selectedMethodIdx = shippingMethod.startsWith('custom_') ? Number(shippingMethod.split('_')[1]) : -1
   const selectedMethod = selectedMethodIdx >= 0 ? activeCustomMethods[selectedMethodIdx] : null
-
-  // Hide address for pickup-type methods (name contains "retiro")
   const isPickup = selectedMethod?.name?.toLowerCase().includes('retiro')
 
   const totalConEnvio = total + shippingCost
@@ -63,12 +89,22 @@ export default function CheckoutPage() {
 
   async function handleContinuar() {
     if (!meetsMin) {
-      const falta = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(minOrder! - total)
-      setError(`El pedido mínimo es de ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(minOrder!)}. Te faltan ${falta}.`)
+      const falta = formatPrice(minOrder! - total)
+      setError(`El pedido minimo es de ${formatPrice(minOrder!)}. Te faltan ${falta}.`)
       return
     }
-    if (!fullName.trim()) { setError('El nombre es obligatorio'); return }
+    if (!nombre.trim()) { setError('El nombre es obligatorio'); return }
+    if (!apellido.trim()) { setError('El apellido es obligatorio'); return }
     if (!email.trim()) { setError('El email es obligatorio'); return }
+    if (!phone.trim()) { setError('El telefono es obligatorio'); return }
+    if (!cuil.trim()) { setError('El CUIL/CUIT es obligatorio'); return }
+    if (!isPickup) {
+      if (!addressStreet.trim()) { setError('La direccion es obligatoria'); return }
+      if (!addressCity.trim()) { setError('La localidad es obligatoria'); return }
+      if (!addressProvince.trim()) { setError('La provincia es obligatoria'); return }
+      if (!addressZip.trim()) { setError('El codigo postal es obligatorio'); return }
+      if (!country.trim()) { setError('El pais es obligatorio'); return }
+    }
     setError(null)
     setStep('pago')
   }
@@ -81,13 +117,15 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: fullName.trim(),
+          fullName: `${nombre.trim()} ${apellido.trim()}`.trim(),
           email: email.trim(),
           phone: phone.trim() || null,
+          cuil: cuil.trim() || null,
           addressStreet: addressStreet.trim() || null,
           addressCity: addressCity.trim() || null,
           addressProvince: addressProvince.trim() || null,
           addressZip: addressZip.trim() || null,
+          country: country.trim() || null,
           shippingMethod,
           shippingCost,
           notes: notes.trim() || null,
@@ -125,7 +163,7 @@ export default function CheckoutPage() {
             variant_id: item.variantId, name: item.productName,
             variant_desc: item.variantDesc, quantity: item.quantity, unit_price: item.price,
           })),
-          payer: { name: fullName, email, phone },
+          payer: { name: `${nombre} ${apellido}`, email, phone },
         }),
       })
       const data = await res.json()
@@ -154,13 +192,17 @@ export default function CheckoutPage() {
     setTimeout(() => setCopied(null), 2000)
   }
 
+  const inputClass = "w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+  const inputDisabledClass = "w-full px-3 py-2.5 border border-[var(--color-border)] bg-[#F2EEE9] text-sm text-[var(--color-stone)] cursor-not-allowed"
+  const labelClass = "block text-xs text-[var(--color-stone)] mb-1.5"
+
   if (items.length === 0 && step !== 'qr') {
     return (
       <>
         <Navbar />
         <main className="pt-28 min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <p className="font-display text-3xl font-light text-[var(--color-stone)] mb-6">Tu carrito está vacío</p>
+            <p className="font-display text-3xl font-light text-[var(--color-stone)] mb-6">Tu carrito esta vacio</p>
             <Link href="/tienda" className="inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase border-b border-[var(--color-charcoal)] pb-1 text-[var(--color-charcoal)]">
               Ir a la tienda
             </Link>
@@ -171,31 +213,22 @@ export default function CheckoutPage() {
     )
   }
 
-  // ── PANTALLA TRANSFERENCIA ────────────────────────────────
   if (step === 'qr') {
     return (
       <>
         <Navbar />
         <main className="pt-28 min-h-screen flex items-center justify-center">
           <div className="max-w-sm w-full mx-auto px-6 text-center">
-            <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)] mb-2">
-              Transferencia bancaria
-            </p>
-            <h1 className="font-display text-4xl font-light text-[var(--color-charcoal)] mb-1">
-              {formatPrice(orderTotal)}
-            </h1>
+            <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)] mb-2">Transferencia bancaria</p>
+            <h1 className="font-display text-4xl font-light text-[var(--color-charcoal)] mb-1">{formatPrice(orderTotal)}</h1>
             {currentOrderId && (
-              <p className="text-xs text-[var(--color-stone)] font-mono mb-8">
-                Pedido #{currentOrderId.slice(0, 8).toUpperCase()}
-              </p>
+              <p className="text-xs text-[var(--color-stone)] font-mono mb-8">Pedido #{currentOrderId.slice(0, 8).toUpperCase()}</p>
             )}
-
             <div className="flex items-center gap-3 mb-5">
               <div className="flex-1 h-px bg-[var(--color-border)]" />
-              <span className="text-xs text-[var(--color-stone)]">o transferí manualmente</span>
+              <span className="text-xs text-[var(--color-stone)]">o transferi manualmente</span>
               <div className="flex-1 h-px bg-[var(--color-border)]" />
             </div>
-
             <div className="space-y-3 mb-8">
               {storeConfig?.transfer_alias && (
                 <div className="flex items-center justify-between bg-[#F2EEE9] px-4 py-3 text-left">
@@ -203,10 +236,7 @@ export default function CheckoutPage() {
                     <p className="text-xs text-[var(--color-stone)] mb-0.5">Alias</p>
                     <p className="text-sm font-light text-[var(--color-charcoal)]">{storeConfig.transfer_alias}</p>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(storeConfig.transfer_alias, 'alias')}
-                    className="text-xs text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors flex items-center gap-1 flex-shrink-0 ml-4"
-                  >
+                  <button onClick={() => copyToClipboard(storeConfig.transfer_alias, 'alias')} className="text-xs text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors flex items-center gap-1 flex-shrink-0 ml-4">
                     {copied === 'alias' ? <><Check size={12} /> Copiado</> : 'Copiar'}
                   </button>
                 </div>
@@ -217,35 +247,26 @@ export default function CheckoutPage() {
                     <p className="text-xs text-[var(--color-stone)] mb-0.5">CBU</p>
                     <p className="text-xs font-mono font-light text-[var(--color-charcoal)] break-all">{storeConfig.transfer_cbu}</p>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(storeConfig.transfer_cbu, 'cbu')}
-                    className="text-xs text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors flex items-center gap-1 flex-shrink-0 ml-4"
-                  >
+                  <button onClick={() => copyToClipboard(storeConfig.transfer_cbu, 'cbu')} className="text-xs text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors flex items-center gap-1 flex-shrink-0 ml-4">
                     {copied === 'cbu' ? <><Check size={12} /> Copiado</> : 'Copiar'}
                   </button>
                 </div>
               )}
             </div>
-
             <p className="text-xs text-[var(--color-stone)] mb-6 leading-relaxed">
               Una vez realizada la transferencia, envianos el comprobante por WhatsApp y confirmamos tu pedido.
             </p>
-
             <div className="space-y-3">
               {storeConfig?.whatsapp_number && (
                 <a
-                  href={`https://wa.me/${storeConfig.whatsapp_number.replace(/\D/g, '')}?text=Hola! Realicé el pedido %23${currentOrderId?.slice(0, 8).toUpperCase() ?? ''} por ${formatPrice(orderTotal)} y quiero enviar el comprobante.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`https://wa.me/${storeConfig.whatsapp_number.replace(/\D/g, '')}?text=Hola! Realice el pedido %23${currentOrderId?.slice(0, 8).toUpperCase() ?? ''} por ${formatPrice(orderTotal)} y quiero enviar el comprobante.`}
+                  target="_blank" rel="noopener noreferrer"
                   className="block w-full py-3.5 bg-[var(--color-charcoal)] text-white text-xs tracking-[0.2em] uppercase text-center hover:bg-[var(--color-stone)] transition-colors"
                 >
                   Enviar comprobante por WhatsApp
                 </a>
               )}
-              <Link
-                href="/tienda"
-                className="block w-full py-3 border border-[var(--color-border)] text-xs tracking-[0.2em] uppercase text-center text-[var(--color-stone)] hover:border-[var(--color-charcoal)] hover:text-[var(--color-charcoal)] transition-colors"
-              >
+              <Link href="/tienda" className="block w-full py-3 border border-[var(--color-border)] text-xs tracking-[0.2em] uppercase text-center text-[var(--color-stone)] hover:border-[var(--color-charcoal)] hover:text-[var(--color-charcoal)] transition-colors">
                 Seguir comprando
               </Link>
             </div>
@@ -256,7 +277,6 @@ export default function CheckoutPage() {
     )
   }
 
-  // ── CHECKOUT NORMAL ──────────────────────────────────────
   return (
     <>
       <Navbar />
@@ -268,7 +288,7 @@ export default function CheckoutPage() {
               <ArrowLeft size={20} strokeWidth={1.5} />
             </Link>
             <h1 className="font-display text-4xl font-light text-[var(--color-charcoal)]">
-              {step === 'datos' ? 'Tus datos' : 'Método de pago'}
+              {step === 'datos' ? 'Tus datos' : 'Metodo de pago'}
             </h1>
           </div>
 
@@ -276,43 +296,56 @@ export default function CheckoutPage() {
             <div className="lg:col-span-2">
 
               {step === 'datos' && (
-                <div className="space-y-5">
-                  {/* Datos de contacto */}
+                <div className="space-y-6">
+
+                  {/* Datos personales */}
                   <div className="space-y-4">
-                    <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Datos de contacto</p>
+                    <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Datos personales</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-[var(--color-stone)] mb-1.5">Nombre completo *</label>
-                        <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Tu nombre" />
+                        <label className={labelClass}>Nombre *</label>
+                        <input className={inputClass} value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Tu nombre" />
                       </div>
                       <div>
-                        <label className="block text-xs text-[var(--color-stone)] mb-1.5">Email *</label>
-                        <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" />
+                        <label className={labelClass}>Apellido *</label>
+                        <input className={inputClass} value={apellido} onChange={e => setApellido(e.target.value)} placeholder="Tu apellido" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelClass}>CUIL / CUIT *</label>
+                        <input className={inputClass} value={cuil} onChange={e => setCuil(e.target.value)} placeholder="20-12345678-9" />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Telefono *</label>
+                        <input className={inputClass} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+54 9 11 XXXX-XXXX" />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs text-[var(--color-stone)] mb-1.5">Teléfono</label>
-                      <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+54 9 11 XXXX-XXXX" />
+                      <label className={labelClass}>
+                        Email *{emailLocked && <span className="ml-2 text-[10px] text-[var(--color-stone)] normal-case tracking-normal">(asociado a tu cuenta)</span>}
+                      </label>
+                      <input
+                        className={emailLocked ? inputDisabledClass : inputClass}
+                        type="email"
+                        value={email}
+                        onChange={e => !emailLocked && setEmail(e.target.value)}
+                        readOnly={emailLocked}
+                        placeholder="tu@email.com"
+                      />
                     </div>
                   </div>
 
                   {/* Método de envío */}
                   {activeCustomMethods.length > 0 && (
-                    <div className="space-y-4 pt-2">
-                      <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Método de envío</p>
+                    <div className="space-y-4">
+                      <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Metodo de envio</p>
                       <div className="space-y-2">
                         {activeCustomMethods.map((m: any, i: number) => {
                           const val = `custom_${i}`
                           return (
                             <label key={i} className={`flex items-center gap-3 p-4 border cursor-pointer transition-colors ${shippingMethod === val ? 'border-[var(--color-charcoal)]' : 'border-[var(--color-border)] hover:border-[var(--color-stone)]'}`}>
-                              <input
-                                type="radio"
-                                name="shipping"
-                                value={val}
-                                checked={shippingMethod === val}
-                                onChange={() => { setShippingMethod(val); setShippingCost(m.price ?? 0) }}
-                                className="accent-[var(--color-charcoal)]"
-                              />
+                              <input type="radio" name="shipping" value={val} checked={shippingMethod === val} onChange={() => { setShippingMethod(val); setShippingCost(m.price ?? 0) }} className="accent-[var(--color-charcoal)]" />
                               <div className="flex-1">
                                 <p className="text-sm font-light text-[var(--color-charcoal)]">{m.name}</p>
                               </div>
@@ -324,29 +357,33 @@ export default function CheckoutPage() {
                         })}
                       </div>
 
-                      {/* Dirección (oculta para retiro en local) */}
+                      {/* Dirección de envío */}
                       {!isPickup && (
-                        <div className="grid grid-cols-2 gap-4 pt-2">
-                          <div className="col-span-2">
-                            <label className="block text-xs text-[var(--color-stone)] mb-1.5">Calle y número</label>
-                            <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors" value={addressStreet} onChange={e => setAddressStreet(e.target.value)} placeholder="Av. Corrientes 1234" />
-                          </div>
+                        <div className="space-y-4 pt-2">
+                          <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Direccion de envio</p>
                           <div>
-                            <label className="block text-xs text-[var(--color-stone)] mb-1.5">Ciudad</label>
-                            <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors" value={addressCity} onChange={e => setAddressCity(e.target.value)} placeholder="Buenos Aires" />
+                            <label className={labelClass}>Calle y numero *</label>
+                            <input className={inputClass} value={addressStreet} onChange={e => setAddressStreet(e.target.value)} placeholder="Av. Corrientes 1234" />
                           </div>
-                          <div>
-                            <label className="block text-xs text-[var(--color-stone)] mb-1.5">Provincia</label>
-                            <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors" value={addressProvince} onChange={e => setAddressProvince(e.target.value)} placeholder="Buenos Aires" />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className={labelClass}>Localidad *</label>
+                              <input className={inputClass} value={addressCity} onChange={e => setAddressCity(e.target.value)} placeholder="Buenos Aires" />
+                            </div>
+                            <div>
+                              <label className={labelClass}>Provincia *</label>
+                              <input className={inputClass} value={addressProvince} onChange={e => setAddressProvince(e.target.value)} placeholder="Buenos Aires" />
+                            </div>
                           </div>
-                          <div>
-                            <label className="block text-xs text-[var(--color-stone)] mb-1.5">Código postal</label>
-                            <input
-                              className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                              value={addressZip}
-                              onChange={e => setAddressZip(e.target.value)}
-                              placeholder="1000"
-                            />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className={labelClass}>Codigo postal *</label>
+                              <input className={inputClass} value={addressZip} onChange={e => setAddressZip(e.target.value)} placeholder="1000" />
+                            </div>
+                            <div>
+                              <label className={labelClass}>Pais *</label>
+                              <input className={inputClass} value={country} onChange={e => setCountry(e.target.value)} placeholder="Argentina" />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -355,7 +392,7 @@ export default function CheckoutPage() {
 
                   {/* Notas */}
                   <div>
-                    <label className="block text-xs text-[var(--color-stone)] mb-1.5">Notas (opcional)</label>
+                    <label className={labelClass}>Notas (opcional)</label>
                     <textarea className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors resize-none" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Instrucciones especiales..." />
                   </div>
 
@@ -373,7 +410,7 @@ export default function CheckoutPage() {
 
               {step === 'pago' && (
                 <div className="space-y-4">
-                  <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Elegí cómo pagar</p>
+                  <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Elegi como pagar</p>
                   {storeConfig?.mp_enabled && (
                     <button onClick={handleMercadoPago} disabled={loading} className="w-full flex items-center gap-4 p-5 border border-[var(--color-border)] hover:border-[var(--color-charcoal)] transition-colors text-left disabled:opacity-60">
                       <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -381,7 +418,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-light text-[var(--color-charcoal)]">MercadoPago</p>
-                        <p className="text-xs text-[var(--color-stone)] mt-0.5">Tarjeta, débito, QR, cuotas</p>
+                        <p className="text-xs text-[var(--color-stone)] mt-0.5">Tarjeta, debito, QR, cuotas</p>
                       </div>
                       <span className="text-[var(--color-stone)]">→</span>
                     </button>
@@ -393,7 +430,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-light text-[var(--color-charcoal)]">Transferencia bancaria</p>
-                        <p className="text-xs text-[var(--color-stone)] mt-0.5">CBU / Alias · Sin comisión</p>
+                        <p className="text-xs text-[var(--color-stone)] mt-0.5">CBU / Alias · Sin comision</p>
                       </div>
                       <span className="text-[var(--color-stone)]">→</span>
                     </button>
@@ -430,7 +467,6 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
-
                 <div className="border-t border-[var(--color-border)] pt-4 space-y-2">
                   <div className="flex justify-between items-center text-xs text-[var(--color-stone)]">
                     <span>Subtotal</span>
@@ -438,15 +474,13 @@ export default function CheckoutPage() {
                   </div>
                   {selectedMethod && (
                     <div className="flex justify-between items-center text-xs text-[var(--color-stone)]">
-                      <span>Envío ({selectedMethod.name})</span>
+                      <span>Envio ({selectedMethod.name})</span>
                       <span>{shippingCost > 0 ? formatPrice(shippingCost) : 'Gratis'}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-2 border-t border-[var(--color-border)]">
                     <span className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)]">Total</span>
-                    <span className="font-display text-2xl font-light text-[var(--color-charcoal)]">
-                      {formatPrice(totalConEnvio)}
-                    </span>
+                    <span className="font-display text-2xl font-light text-[var(--color-charcoal)]">{formatPrice(totalConEnvio)}</span>
                   </div>
                 </div>
               </div>
