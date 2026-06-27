@@ -96,7 +96,7 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
 
   const effectivePrice = wholesalePrice && quantity >= wholesalePrice.min_qty
     ? wholesalePrice.price
-    : (retailPrice ?? 0)
+    : (retailPrice ?? wholesalePrice?.price ?? 0)
 
   const priceType: 'retail' | 'wholesale' = wholesalePrice && quantity >= wholesalePrice.min_qty
     ? 'wholesale' : 'retail'
