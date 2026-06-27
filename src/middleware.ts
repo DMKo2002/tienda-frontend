@@ -67,7 +67,19 @@ export async function middleware(req: NextRequest) {
     requestHeaders.set('x-tenant-id', tenantId)
   }
 
-  return NextResponse.next({ request: { headers: requestHeaders } })
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
+
+  // Cookie legible por client components (no httpOnly) para resolución multi-tenant
+  if (tenantId) {
+    response.cookies.set('x-tenant-id', tenantId, {
+      httpOnly: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24, // 1 día
+    })
+  }
+
+  return response
 }
 
 export const config = {
