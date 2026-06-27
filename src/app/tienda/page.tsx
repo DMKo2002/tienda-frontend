@@ -172,17 +172,16 @@ export default async function TiendaPage({ searchParams }: Props) {
   let showWholesale = false
   if (priceVisibility !== 'all') {
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const user = sessionData?.session?.user
+      const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         if (priceVisibility === 'logged_in' || priceVisibility === 'wholesale_only') {
           const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).single()
           const isWholesale = cust?.type === 'wholesale'
           if (priceVisibility === 'logged_in') {
-            showPrices = true          // cualquier logueado ve precios
-            showWholesale = isWholesale // solo mayoristas ven precio mayorista
+            showPrices = true
+            showWholesale = isWholesale
           } else {
-            showPrices = isWholesale   // wholesale_only: solo mayoristas ven precios
+            showPrices = isWholesale
             showWholesale = isWholesale
           }
         }

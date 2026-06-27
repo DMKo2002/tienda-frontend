@@ -83,14 +83,13 @@ export default async function ProductoPage({ params }: Props) {
   })
   const storeName = tenant?.name ?? 'TIENDA'
 
-  // Price visibility check — use getSession to avoid cookie writes in Server Components
+  // Price visibility — getUser() verifica directamente contra Supabase (más confiable que getSession en SSR)
   const priceVisibility = (config as any)?.price_visibility ?? 'all'
   let showPrices = priceVisibility === 'all'
   let isWholesaleUser = false
   if (priceVisibility !== 'all') {
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const user = sessionData?.session?.user
+      const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: customer } = await supabase
           .from('customers')
