@@ -1,16 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
+
+  useEffect(() => {
+    const conf = searchParams.get('confirmacion')
+    if (conf === 'error') setError('El link de confirmación expiró o es inválido. Intentá registrarte de nuevo.')
+    if (conf === 'ok') setInfo('¡Email confirmado! Ya podés iniciar sesión.')
+  }, [searchParams])
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,6 +82,9 @@ export default function LoginPage() {
             />
           </div>
 
+          {info && (
+            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 px-4 py-3">{info}</p>
+          )}
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-3">{error}</p>
           )}
