@@ -62,7 +62,7 @@ export default async function ProductoPage({ params }: Props) {
   const { data: tenant } = await supabase.from('tenants').select('name').eq('id', TENANT_ID()).single()
   const { data: config } = await supabase
     .from('store_config')
-    .select('logo_url, whatsapp_number, notification_email, price_visibility')
+    .select('logo_url, whatsapp_number, notification_email, price_visibility, ignore_stock')
     .eq('tenant_id', TENANT_ID())
     .single()
 
@@ -200,6 +200,7 @@ export default async function ProductoPage({ params }: Props) {
                 sizes={sizes as string[]}
                 colors={colors as string[]}
                 showPrices={showPrices}
+                ignoreStock={Boolean((config as any)?.ignore_stock)}
               />
 
               {/* Separador */}

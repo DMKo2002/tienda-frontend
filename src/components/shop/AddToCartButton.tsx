@@ -14,6 +14,7 @@ interface Variant {
 
 interface AddToCartButtonProps {
   showPrices?: boolean
+  ignoreStock?: boolean
   product: {
     id: string
     name: string
@@ -49,7 +50,7 @@ function isLight(hex: string): boolean {
   return (r * 299 + g * 587 + b * 114) / 1000 > 180
 }
 
-export default function AddToCartButton({ product, sizes, colors, showPrices = true }: AddToCartButtonProps) {
+export default function AddToCartButton({ product, sizes, colors, showPrices = true, ignoreStock = false }: AddToCartButtonProps) {
   const { addItem } = useCart()
   const [selectedSize, setSelectedSize] = useState<string | null>(sizes[0] ?? null)
   const [selectedColor, setSelectedColor] = useState<string | null>(colors[0] ?? null)
@@ -69,15 +70,15 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
 
   // Helper: is a size available with any color (or the selected color)?
   function isSizeAvailable(size: string): boolean {
+    if (ignoreStock) return true
     if (colors.length === 0) return getVariantStock(size, null) > 0
-    // If a color is selected, check only that color+size combo
     if (selectedColor) return getVariantStock(size, selectedColor) > 0
-    // Otherwise check if any color has stock for this size
     return colors.some(c => getVariantStock(size, c) > 0)
   }
 
   // Helper: is a color available with any size (or the selected size)?
   function isColorAvailable(color: string): boolean {
+    if (ignoreStock) return true
     if (sizes.length === 0) return getVariantStock(null, color) > 0
     if (selectedSize) return getVariantStock(selectedSize, color) > 0
     return sizes.some(s => getVariantStock(s, color) > 0)
@@ -91,7 +92,7 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
 
   const retailPrice = selectedVariant?.price_rules?.find(p => p.type === 'retail' && p.active)?.price
   const wholesalePrice = selectedVariant?.price_rules?.find(p => p.type === 'wholesale' && p.active)
-  const inStock = (selectedVariant?.stock ?? 0) > 0
+  const inStock = ignoreStock || (selectedVariant?.stock ?? 0) > 0
 
   const effectivePrice = wholesalePrice && quantity >= wholesalePrice.min_qty
     ? wholesalePrice.price
@@ -103,10 +104,12 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
   function handleAddToCart() {
     if (!selectedVariant || !effectivePrice) return
     const maxStock = selectedVariant.stock ?? 0
-    if (maxStock === 0) return
-    if (quantity > maxStock) {
-      setStockError(maxStock === 1 ? 'Solo queda 1 unidad disponible' : `Solo quedan ${maxStock} unidades disponibles`)
-      return
+    if (!ignoreStock) {
+      if (maxStock === 0) return
+      if (quantity > maxStock) {
+        setStockError(maxStock === 1 ? 'Solo queda 1 unidad disponible' : `Solo quedan ${maxStock} unidades disponibles`)
+        return
+      }
     }
     addItem({
       variantId: selectedVariant.id,
@@ -228,7 +231,7 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
           <button
             onClick={() => {
               const maxStock = selectedVariant?.stock ?? 0
-              if (quantity >= maxStock) {
+              if (!ignoreStock && quantity >= maxStock) {
                 setStockError(maxStock === 1 ? 'Solo queda 1 unidad disponible' : `Solo quedan ${maxStock} unidades disponibles`)
               } else {
                 setQuantity(q => q + 1)
