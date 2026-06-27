@@ -170,7 +170,6 @@ export default async function ProductoPage({ params }: Props) {
                     {wholesaleRule && (
                       <p className="text-sm text-[var(--color-stone)] mt-1">
                         Precio mayorista: {formatPrice(wholesaleRule.price)}
-                        <span className="ml-1 text-xs">(x{wholesaleRule.min_qty}+)</span>
                       </p>
                     )}
                   </>

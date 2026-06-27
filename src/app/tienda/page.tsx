@@ -177,6 +177,7 @@ export default async function TiendaPage({ searchParams }: Props) {
       if (user) {
         if (priceVisibility === 'logged_in') {
           showPrices = true
+          showWholesale = true
         } else if (priceVisibility === 'wholesale_only') {
           const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).single()
           showPrices = cust?.type === 'wholesale'

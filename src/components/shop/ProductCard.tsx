@@ -96,21 +96,27 @@ export default function ProductCard({
         <div className="flex items-center gap-2 mb-2.5">
           {showPrices ? (
             <>
-              {retailPrice && (
-                <span className={`text-sm ${hasDiscount ? 'text-[var(--color-charcoal)] font-medium' : 'text-[var(--color-charcoal)]'}`}>
-                  {formatPrice(retailPrice)}
+              {retailPrice ? (
+                <>
+                  <span className={`text-sm ${hasDiscount ? 'text-[var(--color-charcoal)] font-medium' : 'text-[var(--color-charcoal)]'}`}>
+                    {formatPrice(retailPrice)}
+                  </span>
+                  {hasDiscount && (
+                    <span className="text-xs text-[var(--color-stone)] line-through">
+                      {formatPrice(retailCompareAt!)}
+                    </span>
+                  )}
+                  {showWholesale && wholesalePrice && (
+                    <span className="text-xs text-[var(--color-stone)]">
+                      Mayor: {formatPrice(wholesalePrice)}
+                    </span>
+                  )}
+                </>
+              ) : showWholesale && wholesalePrice ? (
+                <span className="text-sm text-[var(--color-charcoal)]">
+                  {formatPrice(wholesalePrice)}
                 </span>
-              )}
-              {hasDiscount && (
-                <span className="text-xs text-[var(--color-stone)] line-through">
-                  {formatPrice(retailCompareAt!)}
-                </span>
-              )}
-              {showWholesale && wholesalePrice && (
-                <span className="text-xs text-[var(--color-stone)]">
-                  Mayor: {formatPrice(wholesalePrice)}
-                </span>
-              )}
+              ) : null}
             </>
           ) : (
             <a
