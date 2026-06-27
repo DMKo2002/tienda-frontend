@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-/**
- * Middleware de resolución de tenant + refresco de sesión Supabase.
- *
- * Por cada request:
- *  1. Refresca el token de auth de Supabase (imprescindible para getUser() en SSR)
- *  2. Resuelve el tenant por hostname e inyecta x-tenant-id en headers
- *
- * En desarrollo local (localhost) cae al env var NEXT_PUBLIC_TENANT_ID.
- */
 export async function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers)
 
-  // ── 1. Refresco de sesión Supabase ─────────────────────────────────────────
-  // Necesario para que getUser() funcione en Server Components.
-  // El cliente con cookies reales renueva el JWT si venció.
+  // 1. Refresco de sesion Supabase
   let response = NextResponse.next({ request: { headers: requestHeaders } })
 
   const supabaseAuth = createServerClient(
@@ -25,7 +14,9 @@ export async function middleware(req: NextRequest) {
       cookies: {
         getAll: () => req.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => requestHeaders.set(`cookie`, `${name}=${value}`))
+          cookiesToSet.forEach(({ name, value }) =>
+            requestHeaders.set('cookie', `${name}=${value}`)
+          )
           response = NextResponse.next({ request: { headers: requestHeaders } })
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
@@ -34,10 +25,9 @@ export async function middleware(req: NextRequest) {
       },
     }
   )
-  // Llama a getUser() para que el cliente renueve el access_token si venció
   await supabaseAuth.auth.getUser()
 
-  // ── 2. Resolución de tenant ─────────────────────────────────────────────────
+  // 2. Resolucion de tenant
   const hostname = req.headers.get('host') ?? ''
   const host = hostname.replace(/^www\./, '').split(':')[0]
 
@@ -49,7 +39,6 @@ export async function middleware(req: NextRequest) {
   let tenantId: string | null = null
 
   if (!isLocal) {
-    // Cliente sin cookies — solo necesitamos leer la tabla tenants (pública)
     const supabaseTenant = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -96,6 +85,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Corre en todas las rutas excepto assets estáticos e imágenes de Next
   matcher: ['/((?!_next/static|_next/image|favicon\\.ico).*)'],
 }

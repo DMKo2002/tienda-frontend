@@ -8,25 +8,36 @@ import Turnstile from 'react-turnstile'
 type Tipo = 'retail' | 'wholesale'
 
 const PROVINCIAS = [
-  'Buenos Aires', 'Ciudad Autónoma de Buenos Aires', 'Catamarca', 'Chaco', 'Chubut',
-  'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
-  'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis',
-  'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán',
+  'Buenos Aires', 'Ciudad Autonoma de Buenos Aires', 'Catamarca', 'Chaco', 'Chubut',
+  'Cordoba', 'Corrientes', 'Entre Rios', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+  'Mendoza', 'Misiones', 'Neuquen', 'Rio Negro', 'Salta', 'San Juan', 'San Luis',
+  'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucuman',
 ]
 
 function EyeIcon({ open }: { open: boolean }) {
-  return open
-    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  if (open) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    )
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  )
 }
 
 function LocalidadAutocomplete({
-  value, provincia, onChange, required,
+  value, provincia, onChange,
 }: {
   value: string
   provincia: string
   onChange: (v: string) => void
-  required?: boolean
 }) {
   const [query, setQuery] = useState(value)
   const [sugerencias, setSugerencias] = useState<string[]>([])
@@ -35,7 +46,6 @@ function LocalidadAutocomplete({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Reset cuando cambia la provincia
   useEffect(() => {
     setQuery('')
     onChange('')
@@ -43,7 +53,6 @@ function LocalidadAutocomplete({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provincia])
 
-  // Cierra dropdown al click fuera
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -56,7 +65,7 @@ function LocalidadAutocomplete({
 
   function handleInput(v: string) {
     setQuery(v)
-    onChange('') // invalida selección hasta que elija
+    onChange('')
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (!provincia || v.length < 2) { setSugerencias([]); setOpen(false); return }
     debounceRef.current = setTimeout(async () => {
@@ -66,8 +75,7 @@ function LocalidadAutocomplete({
         const res = await fetch(url)
         const data = await res.json()
         const nombres: string[] = (data.localidades ?? []).map((l: any) => l.nombre)
-        // deduplica
-        setSugerencias([...new Set(nombres)])
+        setSugerencias([...new Set(nombres)] as string[])
         setOpen(nombres.length > 0)
       } catch {
         setSugerencias([])
@@ -90,16 +98,12 @@ function LocalidadAutocomplete({
         type="text"
         autoComplete="off"
         className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-        placeholder={provincia ? 'Escribí para buscar...' : 'Primero elegí una provincia'}
+        placeholder={provincia ? 'Escribi para buscar...' : 'Primero elegi una provincia'}
         disabled={!provincia}
         value={query}
         onChange={e => handleInput(e.target.value)}
         onFocus={() => sugerencias.length > 0 && setOpen(true)}
-        required={required}
-        // Campo oculto para que el navegador valide que haya una selección real
       />
-      {/* input oculto para forzar que seleccionen de la lista */}
-      <input type="hidden" value={value} required={required} />
       {buscando && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           <div className="w-3 h-3 border border-[var(--color-stone)] border-t-transparent rounded-full animate-spin" />
@@ -120,8 +124,8 @@ function LocalidadAutocomplete({
           ))}
         </ul>
       )}
-      {!value && query.length >= 2 && !buscando && sugerencias.length === 0 && open === false && (
-        <p className="mt-1 text-[10px] text-amber-600">Seleccioná una localidad de la lista</p>
+      {!value && query.length >= 2 && !buscando && !open && (
+        <p className="mt-1 text-[10px] text-amber-600">Selecciona una localidad de la lista</p>
       )}
     </div>
   )
@@ -148,29 +152,13 @@ export default function RegistroPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-
-    if (form.password !== form.confirmar) {
-      setError('Las contraseñas no coinciden')
-      return
-    }
+    if (form.password !== form.confirmar) { setError('Las contrasenas no coinciden'); return }
     if (tipo === 'wholesale') {
-      if (!form.empresa || !form.cuit) {
-        setError('Empresa y CUIT son obligatorios para cuentas mayoristas')
-        return
-      }
-      if (!form.provincia || !form.localidad) {
-        setError('Provincia y localidad son obligatorias')
-        return
-      }
-      if (!form.direccion) {
-        setError('La dirección es obligatoria')
-        return
-      }
+      if (!form.empresa || !form.cuit) { setError('Empresa y CUIT son obligatorios'); return }
+      if (!form.provincia || !form.localidad) { setError('Provincia y localidad son obligatorias'); return }
+      if (!form.direccion) { setError('La direccion es obligatoria'); return }
     }
-    if (!turnstileToken) {
-      setError('Completá la verificación de seguridad')
-      return
-    }
+    if (!turnstileToken) { setError('Completa la verificacion de seguridad'); return }
 
     setLoading(true)
     try {
@@ -178,24 +166,18 @@ export default function RegistroPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nombre: form.nombre,
-          apellido: form.apellido,
-          email: form.email,
-          password: form.password,
-          tipo,
-          empresa: form.empresa || undefined,
-          cuit: form.cuit || undefined,
-          direccion: form.direccion || undefined,
-          provincia: form.provincia || undefined,
-          localidad: form.localidad || undefined,
-          turnstileToken,
+          nombre: form.nombre, apellido: form.apellido, email: form.email,
+          password: form.password, tipo,
+          empresa: form.empresa || undefined, cuit: form.cuit || undefined,
+          direccion: form.direccion || undefined, provincia: form.provincia || undefined,
+          localidad: form.localidad || undefined, turnstileToken,
         }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
       setExito(true)
     } catch {
-      setError('Error de conexión. Intentá de nuevo.')
+      setError('Error de conexion. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -210,12 +192,12 @@ export default function RegistroPage() {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h1 className="font-display text-3xl font-light text-[var(--color-charcoal)] mb-3">¡Registro exitoso!</h1>
+          <h1 className="font-display text-3xl font-light text-[var(--color-charcoal)] mb-3">Registro exitoso!</h1>
           <p className="text-sm text-[var(--color-stone)] font-light leading-relaxed mb-6">
-            Te enviamos un email de confirmación a <strong>{form.email}</strong>. Revisá tu bandeja de entrada para activar tu cuenta.
+            Te enviamos un email de confirmacion a <strong>{form.email}</strong>. Revisa tu bandeja de entrada para activar tu cuenta.
           </p>
           <Link href="/cuenta/login" className="text-sm text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
-            Ir al inicio de sesión
+            Ir al inicio de sesion
           </Link>
         </div>
       </div>
@@ -226,95 +208,64 @@ export default function RegistroPage() {
     <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
 
-        {/* Logo / volver */}
         <div className="text-center mb-10">
           <Link href="/tienda" className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
-            ← Volver a la tienda
+            volver a la tienda
           </Link>
           <h1 className="font-display text-4xl font-light text-[var(--color-charcoal)] mt-4">Crear cuenta</h1>
         </div>
 
-        {/* Selector de tipo */}
         <div className="flex mb-8 border border-[var(--color-border)]">
-          <button
-            type="button"
-            onClick={() => setTipo('retail')}
-            className={`flex-1 py-3 text-sm tracking-[0.1em] uppercase transition-colors ${tipo === 'retail' ? 'bg-[var(--color-charcoal)] text-white' : 'text-[var(--color-stone)] hover:text-[var(--color-charcoal)]'}`}
-          >
+          <button type="button" onClick={() => setTipo('retail')}
+            className={`flex-1 py-3 text-sm tracking-[0.1em] uppercase transition-colors ${tipo === 'retail' ? 'bg-[var(--color-charcoal)] text-white' : 'text-[var(--color-stone)] hover:text-[var(--color-charcoal)]'}`}>
             Minorista
           </button>
-          <button
-            type="button"
-            onClick={() => setTipo('wholesale')}
-            className={`flex-1 py-3 text-sm tracking-[0.1em] uppercase transition-colors ${tipo === 'wholesale' ? 'bg-[var(--color-charcoal)] text-white' : 'text-[var(--color-stone)] hover:text-[var(--color-charcoal)]'}`}
-          >
+          <button type="button" onClick={() => setTipo('wholesale')}
+            className={`flex-1 py-3 text-sm tracking-[0.1em] uppercase transition-colors ${tipo === 'wholesale' ? 'bg-[var(--color-charcoal)] text-white' : 'text-[var(--color-stone)] hover:text-[var(--color-charcoal)]'}`}>
             Mayorista
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* Nombre y Apellido */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Nombre *</label>
-              <input
-                className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                value={form.nombre} onChange={e => set('nombre', e.target.value)} required
-              />
+              <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                value={form.nombre} onChange={e => set('nombre', e.target.value)} required />
             </div>
             <div>
               <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Apellido</label>
-              <input
-                className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                value={form.apellido} onChange={e => set('apellido', e.target.value)}
-              />
+              <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                value={form.apellido} onChange={e => set('apellido', e.target.value)} />
             </div>
           </div>
 
-          {/* Campos mayorista */}
           {tipo === 'wholesale' && (
             <>
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Nombre de la Empresa *</label>
-                <input
-                  className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                  value={form.empresa} onChange={e => set('empresa', e.target.value)} required
-                />
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Empresa *</label>
+                <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                  value={form.empresa} onChange={e => set('empresa', e.target.value)} required />
               </div>
               <div>
                 <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">CUIT *</label>
-                <input
-                  className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                  value={form.cuit} onChange={e => set('cuit', e.target.value)} required
-                  placeholder="20-12345678-9"
-                />
+                <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                  value={form.cuit} onChange={e => set('cuit', e.target.value)} required placeholder="20-12345678-9" />
               </div>
-
-              {/* Dirección */}
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Dirección *</label>
-                <input
-                  className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Direccion *</label>
+                <input className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
                   placeholder="Ej: Av. Corrientes 1234"
-                  value={form.direccion} onChange={e => set('direccion', e.target.value)} required
-                />
+                  value={form.direccion} onChange={e => set('direccion', e.target.value)} required />
               </div>
-
-              {/* Provincia */}
               <div>
                 <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Provincia *</label>
                 <div className="relative">
-                  <select
-                    className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors appearance-none"
-                    value={form.provincia}
-                    onChange={e => set('provincia', e.target.value)}
-                    required
-                  >
-                    <option value="">Seleccioná una provincia</option>
-                    {PROVINCIAS.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                  <select className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors appearance-none"
+                    value={form.provincia} onChange={e => set('provincia', e.target.value)} required>
+                    <option value="">Selecciona una provincia</option>
+                    {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                   <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -323,55 +274,38 @@ export default function RegistroPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Localidad — autocomplete georef */}
               <div>
                 <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Localidad *</label>
-                <LocalidadAutocomplete
-                  value={form.localidad}
-                  provincia={form.provincia}
-                  onChange={v => set('localidad', v)}
-                  required
-                />
+                <LocalidadAutocomplete value={form.localidad} provincia={form.provincia} onChange={v => set('localidad', v)} />
               </div>
             </>
           )}
 
-          {/* Email */}
           <div>
             <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Email *</label>
-            <input
-              type="email"
-              className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-              value={form.email} onChange={e => set('email', e.target.value)} required
-            />
+            <input type="email" className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+              value={form.email} onChange={e => set('email', e.target.value)} required />
           </div>
 
-          {/* Contraseña */}
           <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Contraseña *</label>
+            <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Contrasena *</label>
             <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
+              <input type={showPassword ? 'text' : 'password'}
                 className="w-full px-3 py-2.5 pr-10 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                value={form.password} onChange={e => set('password', e.target.value)}
-                required minLength={8} placeholder="Mínimo 8 caracteres"
-              />
+                value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Minimo 8 caracteres" />
               <button type="button" onClick={() => setShowPassword(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
                 <EyeIcon open={showPassword} />
               </button>
             </div>
           </div>
+
           <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Confirmar Contraseña *</label>
+            <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Confirmar Contrasena *</label>
             <div className="relative">
-              <input
-                type={showConfirmar ? 'text' : 'password'}
+              <input type={showConfirmar ? 'text' : 'password'}
                 className="w-full px-3 py-2.5 pr-10 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                value={form.confirmar} onChange={e => set('confirmar', e.target.value)}
-                required minLength={8}
-              />
+                value={form.confirmar} onChange={e => set('confirmar', e.target.value)} required minLength={8} />
               <button type="button" onClick={() => setShowConfirmar(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
                 <EyeIcon open={showConfirmar} />
@@ -379,7 +313,6 @@ export default function RegistroPage() {
             </div>
           </div>
 
-          {/* Turnstile */}
           <div className="flex justify-center py-2">
             <Turnstile
               sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'}
@@ -393,18 +326,15 @@ export default function RegistroPage() {
             <p className="text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-3">{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !turnstileToken}
-            className="w-full py-3.5 bg-[var(--color-charcoal)] text-white text-[11px] tracking-[0.2em] uppercase hover:bg-[var(--color-stone)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="submit" disabled={loading || !turnstileToken}
+            className="w-full py-3.5 bg-[var(--color-charcoal)] text-white text-[11px] tracking-[0.2em] uppercase hover:bg-[var(--color-stone)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
 
           <p className="text-center text-sm text-[var(--color-stone)] font-light">
-            ¿Ya tenés cuenta?{' '}
+            Ya tenes cuenta?{' '}
             <Link href="/cuenta/login" className="text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
-              Iniciar sesión
+              Iniciar sesion
             </Link>
           </p>
 

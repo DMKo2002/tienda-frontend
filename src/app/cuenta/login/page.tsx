@@ -16,8 +16,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     const conf = searchParams.get('confirmacion')
-    if (conf === 'error') setError('El link de confirmación expiró o es inválido. Intentá registrarte de nuevo.')
-    if (conf === 'ok') setInfo('¡Email confirmado! Ya podés iniciar sesión.')
+    if (conf === 'error') setError('El link de confirmacion expiro o es invalido. Intenta registrarte de nuevo.')
+    if (conf === 'ok') setInfo('Email confirmado! Ya podes iniciar sesion.')
   }, [searchParams])
 
   const supabase = createBrowserClient(
@@ -34,9 +34,9 @@ export default function LoginPage() {
 
     if (authError) {
       if (authError.message.includes('Invalid login') || authError.message.includes('invalid')) {
-        setError('Email o contraseña incorrectos')
+        setError('Email o contrasena incorrectos')
       } else if (authError.message.includes('Email not confirmed')) {
-        setError('Confirmá tu email antes de iniciar sesión. Revisá tu bandeja de entrada.')
+        setError('Confirma tu email antes de iniciar sesion. Revisa tu bandeja de entrada.')
       } else {
         setError(authError.message)
       }
@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         <div className="text-center mb-10">
           <Link href="/tienda" className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
-            ← Volver a la tienda
+            volver a la tienda
           </Link>
           <h1 className="font-display text-4xl font-light text-[var(--color-charcoal)] mt-4">Mi cuenta</h1>
         </div>
@@ -70,9 +70,9 @@ export default function LoginPage() {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)]">Contraseña</label>
+              <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)]">Contrasena</label>
               <Link href="/cuenta/recuperar" className="text-[10px] text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors underline">
-                ¿Olvidaste tu contraseña?
+                Olvidaste tu contrasena?
               </Link>
             </div>
             <input
@@ -94,11 +94,11 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3.5 bg-[var(--color-charcoal)] text-white text-[11px] tracking-[0.2em] uppercase hover:bg-[var(--color-stone)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Ingresando...' : 'Iniciar sesión'}
+            {loading ? 'Ingresando...' : 'Iniciar sesion'}
           </button>
 
           <p className="text-center text-sm text-[var(--color-stone)] font-light">
-            ¿No tenés cuenta?{' '}
+            No tenes cuenta?{' '}
             <Link href="/cuenta/registro" className="text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
               Registrarse
             </Link>

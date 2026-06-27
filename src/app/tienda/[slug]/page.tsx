@@ -23,10 +23,10 @@ export async function generateMetadata({ params }: Props) {
   if (!data) return { title: 'Producto no encontrado' }
 
   const storeName = tenantData?.name ?? 'Tienda'
-  const title = `${data.name} — ${storeName}`
+  const title = `${data.name} - ${storeName}`
   const description = data.description
     ? data.description.slice(0, 155)
-    : `Comprá ${data.name} en ${storeName}. Envíos a todo el país.`
+    : `Compra ${data.name} en ${storeName}. Envios a todo el pais.`
 
   const images = ((data.product_images ?? []) as any[]).sort((a, b) => {
     if (a.is_cover) return -1
@@ -83,7 +83,6 @@ export default async function ProductoPage({ params }: Props) {
   })
   const storeName = tenant?.name ?? 'TIENDA'
 
-  // Price visibility — getUser() verifica directamente contra Supabase (más confiable que getSession en SSR)
   const priceVisibility = (config as any)?.price_visibility ?? 'all'
   let showPrices = priceVisibility === 'all'
   let isWholesaleUser = false
@@ -109,7 +108,6 @@ export default async function ProductoPage({ params }: Props) {
     } catch { showPrices = false }
   }
 
-  // Agrupar variantes por talle y color
   const sizes = [...new Set((product.variants ?? []).map((v: any) => v.size).filter(Boolean))]
   const colors = [...new Set((product.variants ?? []).map((v: any) => v.color).filter(Boolean))]
 
@@ -122,7 +120,7 @@ export default async function ProductoPage({ params }: Props) {
     '@context': 'https://schema.org/',
     '@type': 'Product',
     name: product.name,
-    description: product.description ?? `${product.name} — ${storeName}`,
+    description: product.description ?? `${product.name} - ${storeName}`,
     image: coverImage ? [coverImage] : undefined,
     sku: (product as any).sku ?? undefined,
     offers: retailPrice ? {
@@ -147,12 +145,9 @@ export default async function ProductoPage({ params }: Props) {
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
 
-            {/* Galería de imágenes */}
             <ProductGallery images={images} productName={product.name} />
 
-            {/* Info del producto */}
             <div className="py-4">
-              {/* Breadcrumb */}
               <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-6">
                 Tienda / {product.name}
               </p>
@@ -161,7 +156,6 @@ export default async function ProductoPage({ params }: Props) {
                 {product.name}
               </h1>
 
-              {/* Precio */}
               <div className="mb-8">
                 {showPrices ? (
                   <>
@@ -183,15 +177,13 @@ export default async function ProductoPage({ params }: Props) {
                   >
                     {priceVisibility === 'wholesale_only'
                       ? 'Precio disponible solo para mayoristas'
-                      : 'Iniciá sesión para ver el precio'}
+                      : 'Inicia sesion para ver el precio'}
                   </a>
                 )}
               </div>
 
-              {/* Separador */}
               <div className="w-full h-px bg-[var(--color-border)] mb-8" />
 
-              {/* Selector de variante + agregar al carrito */}
               <AddToCartButton
                 product={{
                   id: product.id,
@@ -206,20 +198,17 @@ export default async function ProductoPage({ params }: Props) {
                 ignoreStock={Boolean((config as any)?.ignore_stock)}
               />
 
-              {/* Separador */}
               <div className="w-full h-px bg-[var(--color-border)] my-8" />
 
-              {/* Descripción */}
               {product.description && (
                 <div>
-                  <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-3">Descripción</p>
+                  <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-3">Descripcion</p>
                   <p className="text-sm text-[var(--color-stone)] leading-relaxed font-light">
                     {product.description}
                   </p>
                 </div>
               )}
 
-              {/* WhatsApp */}
               {config?.whatsapp_number && (
                 <div className="mt-8">
                   <a

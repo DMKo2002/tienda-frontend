@@ -59,7 +59,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
   const [added, setAdded] = useState(false)
   const [stockError, setStockError] = useState<string | null>(null)
 
-  // Helper: get stock for a specific size+color combination
   function getVariantStock(size: string | null, color: string | null): number {
     const v = product.variants.find(v => {
       const sm = sizes.length === 0 || v.size === size
@@ -69,7 +68,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
     return v?.stock ?? 0
   }
 
-  // Helper: is a size available with any color (or the selected color)?
   function isSizeAvailable(size: string): boolean {
     if (ignoreStock) return true
     if (colors.length === 0) return getVariantStock(size, null) > 0
@@ -77,7 +75,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
     return colors.some(c => getVariantStock(size, c) > 0)
   }
 
-  // Helper: is a color available with any size (or the selected size)?
   function isColorAvailable(color: string): boolean {
     if (ignoreStock) return true
     if (sizes.length === 0) return getVariantStock(null, color) > 0
@@ -135,7 +132,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
   return (
     <div className="space-y-6">
 
-      {/* Selector de COLOR — círculos */}
       {colors.length > 0 && (
         <div>
           <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-3">
@@ -154,18 +150,11 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
                 <button
                   key={color}
                   onClick={() => { if (available) { setSelectedColor(color); setStockError(null) } }}
-                  title={available ? color : `${color} — sin stock`}
+                  title={available ? color : `${color} - sin stock`}
                   disabled={!available}
                   style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    backgroundColor: hex,
-                    border: selected
-                      ? '2px solid var(--color-charcoal)'
-                      : light
-                      ? '1px solid #D0CBC3'
-                      : '1px solid transparent',
+                    width: 28, height: 28, borderRadius: '50%', backgroundColor: hex,
+                    border: selected ? '2px solid var(--color-charcoal)' : light ? '1px solid #D0CBC3' : '1px solid transparent',
                     outline: selected ? '2px solid white' : 'none',
                     outlineOffset: -4,
                     cursor: available ? 'pointer' : 'not-allowed',
@@ -180,7 +169,7 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
                     <span style={{
                       position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 16, color: light ? '#666' : '#fff', fontWeight: 300,
-                    }}>×</span>
+                    }}>x</span>
                   )}
                 </button>
               )
@@ -189,12 +178,9 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
         </div>
       )}
 
-      {/* Selector de TALLE — pills */}
       {sizes.length > 0 && (
         <div>
-          <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-3">
-            Talle
-          </p>
+          <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-3">Talle</p>
           <div className="flex gap-2 flex-wrap">
             {sizes.map(size => {
               const available = isSizeAvailable(size)
@@ -210,7 +196,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
                       ? 'border-[var(--color-border)] text-[var(--color-charcoal)] hover:border-[var(--color-charcoal)]'
                       : 'border-[var(--color-border)] text-[var(--color-stone)]/40 cursor-not-allowed line-through'
                   }`}
-                  title={available ? size : `${size} — sin stock`}
                 >
                   {size}
                 </button>
@@ -220,7 +205,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
         </div>
       )}
 
-      {/* Cantidad */}
       <div>
         <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] mb-3">Cantidad</p>
         <div className="flex items-center border border-[var(--color-border)] w-fit">
@@ -228,7 +212,7 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
             onClick={() => { setQuantity(q => Math.max(1, q - 1)); setStockError(null) }}
             className="w-10 h-10 flex items-center justify-center text-[var(--color-charcoal)] hover:bg-[var(--color-border)] transition-colors"
           >
-            −
+            -
           </button>
           <span className="w-12 text-center text-sm font-light">{quantity}</span>
           <button
@@ -251,19 +235,16 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
         )}
       </div>
 
-      {/* Banner precio mayorista */}
       {showPrices && wholesalePrice && quantity >= wholesalePrice.min_qty && (
         <div className="bg-[#F2EEE9] px-4 py-3 text-sm text-[var(--color-charcoal)]">
           Precio mayorista aplicado: <strong>{formatPrice(wholesalePrice.price)}</strong> por unidad
         </div>
       )}
 
-      {/* Sin stock */}
       {selectedVariant && !inStock && (
         <p className="text-xs text-red-400 tracking-wide">Sin stock disponible para esta variante</p>
       )}
 
-      {/* Botón agregar */}
       <button
         onClick={handleAddToCart}
         disabled={!selectedVariant || !inStock || !effectivePrice}
@@ -281,7 +262,7 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
         ) : (
           <>
             <ShoppingBag size={16} strokeWidth={1.5} />
-            Agregar al carrito{showPrices && effectivePrice ? ` — ${formatPrice(effectivePrice * quantity)}` : ''}
+            {showPrices && effectivePrice ? `Agregar al carrito - ${formatPrice(effectivePrice * quantity)}` : 'Agregar al carrito'}
           </>
         )}
       </button>
