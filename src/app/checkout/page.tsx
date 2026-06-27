@@ -405,6 +405,38 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Dirección */}
+                  <div className="space-y-4">
+                    <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Direccion</p>
+                    <div>
+                      <label className={labelClass}>Calle y numero *</label>
+                      <input className={inputClass} value={addressStreet} onChange={e => setAddressStreet(e.target.value)} placeholder="Av. Corrientes 1234" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelClass}>Provincia *</label>
+                        <select className={inputClass} value={addressProvince} onChange={e => setAddressProvince(e.target.value)}>
+                          <option value="">Selecciona una provincia</option>
+                          {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelClass}>Localidad *</label>
+                        <LocalidadAutocomplete value={addressCity} provincia={addressProvince} onChange={setAddressCity} inputClass={inputClass} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelClass}>Codigo postal *</label>
+                        <input className={inputClass} value={addressZip} onChange={e => setAddressZip(e.target.value)} placeholder="1000" />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Pais *</label>
+                        <input className={inputClass} value={country} onChange={e => setCountry(e.target.value)} placeholder="Argentina" />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Método de envío */}
                   {activeCustomMethods.length > 0 && (
                     <div className="space-y-4">
@@ -424,38 +456,6 @@ export default function CheckoutPage() {
                             </label>
                           )
                         })}
-                      </div>
-
-                      {/* Dirección — siempre visible */}
-                      <div className="space-y-4 pt-2">
-                        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Direccion</p>
-                        <div>
-                          <label className={labelClass}>Calle y numero *</label>
-                          <input className={inputClass} value={addressStreet} onChange={e => setAddressStreet(e.target.value)} placeholder="Av. Corrientes 1234" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className={labelClass}>Provincia *</label>
-                            <select className={inputClass} value={addressProvince} onChange={e => setAddressProvince(e.target.value)}>
-                              <option value="">Selecciona una provincia</option>
-                              {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className={labelClass}>Localidad *</label>
-                            <LocalidadAutocomplete value={addressCity} provincia={addressProvince} onChange={setAddressCity} inputClass={inputClass} />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className={labelClass}>Codigo postal *</label>
-                            <input className={inputClass} value={addressZip} onChange={e => setAddressZip(e.target.value)} placeholder="1000" />
-                          </div>
-                          <div>
-                            <label className={labelClass}>Pais *</label>
-                            <input className={inputClass} value={country} onChange={e => setCountry(e.target.value)} placeholder="Argentina" />
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )}
