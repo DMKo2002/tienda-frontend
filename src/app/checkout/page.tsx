@@ -1,12 +1,81 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCart } from '@/components/shop/CartContext'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import Link from 'next/link'
 import { ArrowLeft, CreditCard, Building2, ImageOff, Check } from 'lucide-react'
 import { createClient, TENANT_ID } from '@/lib/supabase'
+
+const PROVINCIAS = [
+  'Buenos Aires', 'Ciudad Autonoma de Buenos Aires', 'Catamarca', 'Chaco', 'Chubut',
+  'Cordoba', 'Corrientes', 'Entre Rios', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+  'Mendoza', 'Misiones', 'Neuquen', 'Rio Negro', 'Salta', 'San Juan', 'San Luis',
+  'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucuman',
+]
+
+function LocalidadAutocomplete({ value, provincia, onChange, inputClass }: {
+  value: string; provincia: string; onChange: (v: string) => void; inputClass: string
+}) {
+  const [query, setQuery] = useState(value)
+  const [sugerencias, setSugerencias] = useState<string[]>([])
+  const [open, setOpen] = useState(false)
+  const [buscando, setBuscando] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setQuery(''); onChange(''); setSugerencias([]) }, [provincia])
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function handleInput(v: string) {
+    setQuery(v); onChange('')
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!provincia || v.length < 2) { setSugerencias([]); setOpen(false); return }
+    debounceRef.current = setTimeout(async () => {
+      setBuscando(true)
+      try {
+        const url = `https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(provincia)}&nombre=${encodeURIComponent(v)}&orden=nombre&max=8&campos=nombre`
+        const res = await fetch(url)
+        const data = await res.json()
+        const nombres: string[] = [...new Set((data.localidades ?? []).map((l: any) => l.nombre))] as string[]
+        setSugerencias(nombres); setOpen(nombres.length > 0)
+      } catch { setSugerencias([]) } finally { setBuscando(false) }
+    }, 300)
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        type="text" autoComplete="off"
+        className={inputClass}
+        placeholder={provincia ? 'Escribi para buscar...' : 'Primero elegí una provincia'}
+        disabled={!provincia} value={query}
+        onChange={e => handleInput(e.target.value)}
+        onFocus={() => sugerencias.length > 0 && setOpen(true)}
+      />
+      {buscando && <div className="absolute right-3 top-1/2 -translate-y-1/2"><div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin" /></div>}
+      {open && sugerencias.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[var(--color-border)] shadow-lg max-h-48 overflow-y-auto">
+          {sugerencias.map(s => (
+            <li key={s}>
+              <button type="button" onMouseDown={() => { setQuery(s); onChange(s); setSugerencias([]); setOpen(false) }}
+                className="w-full text-left px-3 py-2 text-sm text-[var(--color-charcoal)] hover:bg-[#F2EEE9] transition-colors">
+                {s}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
@@ -357,36 +426,37 @@ export default function CheckoutPage() {
                         })}
                       </div>
 
-                      {/* Dirección de envío */}
-                      {!isPickup && (
-                        <div className="space-y-4 pt-2">
-                          <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Direccion de envio</p>
+                      {/* Dirección — siempre visible */}
+                      <div className="space-y-4 pt-2">
+                        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-stone)]">Direccion</p>
+                        <div>
+                          <label className={labelClass}>Calle y numero *</label>
+                          <input className={inputClass} value={addressStreet} onChange={e => setAddressStreet(e.target.value)} placeholder="Av. Corrientes 1234" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className={labelClass}>Calle y numero *</label>
-                            <input className={inputClass} value={addressStreet} onChange={e => setAddressStreet(e.target.value)} placeholder="Av. Corrientes 1234" />
+                            <label className={labelClass}>Provincia *</label>
+                            <select className={inputClass} value={addressProvince} onChange={e => setAddressProvince(e.target.value)}>
+                              <option value="">Selecciona una provincia</option>
+                              {PROVINCIAS.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className={labelClass}>Localidad *</label>
-                              <input className={inputClass} value={addressCity} onChange={e => setAddressCity(e.target.value)} placeholder="Buenos Aires" />
-                            </div>
-                            <div>
-                              <label className={labelClass}>Provincia *</label>
-                              <input className={inputClass} value={addressProvince} onChange={e => setAddressProvince(e.target.value)} placeholder="Buenos Aires" />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className={labelClass}>Codigo postal *</label>
-                              <input className={inputClass} value={addressZip} onChange={e => setAddressZip(e.target.value)} placeholder="1000" />
-                            </div>
-                            <div>
-                              <label className={labelClass}>Pais *</label>
-                              <input className={inputClass} value={country} onChange={e => setCountry(e.target.value)} placeholder="Argentina" />
-                            </div>
+                          <div>
+                            <label className={labelClass}>Localidad *</label>
+                            <LocalidadAutocomplete value={addressCity} provincia={addressProvince} onChange={setAddressCity} inputClass={inputClass} />
                           </div>
                         </div>
-                      )}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelClass}>Codigo postal *</label>
+                            <input className={inputClass} value={addressZip} onChange={e => setAddressZip(e.target.value)} placeholder="1000" />
+                          </div>
+                          <div>
+                            <label className={labelClass}>Pais *</label>
+                            <input className={inputClass} value={country} onChange={e => setCountry(e.target.value)} placeholder="Argentina" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
