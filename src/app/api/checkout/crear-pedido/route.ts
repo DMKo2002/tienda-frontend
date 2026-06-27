@@ -94,6 +94,10 @@ export async function POST(req: NextRequest) {
       } else if (retailRule) {
         actualPrice = retailRule.price
         actualPriceType = 'retail'
+      } else if (wholesaleRule) {
+        // Producto sin precio minorista — usar precio mayorista igual
+        actualPrice = wholesaleRule.price
+        actualPriceType = 'wholesale'
       } else {
         throw new Error(`Precio no encontrado para el producto "${item.productName}". Por favor recargá la página.`)
       }
