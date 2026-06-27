@@ -86,21 +86,25 @@ export default async function ProductoPage({ params }: Props) {
   // Price visibility check — use getSession to avoid cookie writes in Server Components
   const priceVisibility = (config as any)?.price_visibility ?? 'all'
   let showPrices = priceVisibility === 'all'
+  let isWholesaleUser = false
   if (priceVisibility !== 'all') {
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       const user = sessionData?.session?.user
       if (user) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('type')
+          .eq('email', user.email ?? '')
+          .eq('tenant_id', TENANT_ID())
+          .single()
+        const isWholesale = customer?.type === 'wholesale'
         if (priceVisibility === 'logged_in') {
           showPrices = true
+          isWholesaleUser = isWholesale
         } else if (priceVisibility === 'wholesale_only') {
-          const { data: customer } = await supabase
-            .from('customers')
-            .select('type')
-            .eq('email', user.email ?? '')
-            .eq('tenant_id', TENANT_ID())
-            .single()
-          showPrices = customer?.type === 'wholesale'
+          showPrices = isWholesale
+          isWholesaleUser = isWholesale
         }
       }
     } catch { showPrices = false }
@@ -167,7 +171,7 @@ export default async function ProductoPage({ params }: Props) {
                         {formatPrice(retailRule.price)}
                       </p>
                     )}
-                    {wholesaleRule && (
+                    {isWholesaleUser && wholesaleRule && (
                       <p className="text-sm text-[var(--color-stone)] mt-1">
                         Precio mayorista: {formatPrice(wholesaleRule.price)}
                       </p>
@@ -199,6 +203,7 @@ export default async function ProductoPage({ params }: Props) {
                 sizes={sizes as string[]}
                 colors={colors as string[]}
                 showPrices={showPrices}
+                isWholesale={isWholesaleUser}
                 ignoreStock={Boolean((config as any)?.ignore_stock)}
               />
 
@@ -231,10 +236,4 @@ export default async function ProductoPage({ params }: Props) {
             </div>
 
           </div>
-        </div>
-      </main>
-
-      <Footer storeName={storeName} logoUrl={config?.logo_url ?? undefined} whatsapp={config?.whatsapp_number ?? ''} email={config?.notification_email ?? ''} />
-    </>
-  )
-}
+        </d

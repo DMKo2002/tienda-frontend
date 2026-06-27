@@ -15,6 +15,7 @@ interface Variant {
 interface AddToCartButtonProps {
   showPrices?: boolean
   ignoreStock?: boolean
+  isWholesale?: boolean
   product: {
     id: string
     name: string
@@ -50,7 +51,7 @@ function isLight(hex: string): boolean {
   return (r * 299 + g * 587 + b * 114) / 1000 > 180
 }
 
-export default function AddToCartButton({ product, sizes, colors, showPrices = true, ignoreStock = false }: AddToCartButtonProps) {
+export default function AddToCartButton({ product, sizes, colors, showPrices = true, ignoreStock = false, isWholesale = false }: AddToCartButtonProps) {
   const { addItem } = useCart()
   const [selectedSize, setSelectedSize] = useState<string | null>(sizes[0] ?? null)
   const [selectedColor, setSelectedColor] = useState<string | null>(colors[0] ?? null)
@@ -91,12 +92,14 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
   })
 
   const retailPrice = selectedVariant?.price_rules?.find(p => p.type === 'retail' && p.active)?.price
-  const wholesalePrice = selectedVariant?.price_rules?.find(p => p.type === 'wholesale' && p.active)
+  const wholesalePrice = isWholesale
+    ? selectedVariant?.price_rules?.find(p => p.type === 'wholesale' && p.active)
+    : undefined
   const inStock = ignoreStock || (selectedVariant?.stock ?? 0) > 0
 
   const effectivePrice = wholesalePrice && quantity >= wholesalePrice.min_qty
     ? wholesalePrice.price
-    : (retailPrice ?? wholesalePrice?.price ?? 0)
+    : (retailPrice ?? (isWholesale ? wholesalePrice?.price : undefined) ?? 0)
 
   const priceType: 'retail' | 'wholesale' = wholesalePrice && quantity >= wholesalePrice.min_qty
     ? 'wholesale' : 'retail'
@@ -277,12 +280,4 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
           </>
         ) : (
           <>
-            <ShoppingBag size={16} strokeWidth={1.5} />
-            Agregar al carrito{showPrices && effectivePrice ? ` — ${formatPrice(effectivePrice * quantity)}` : ''}
-          </>
-        )}
-      </button>
-
-    </div>
-  )
-}
+            <ShoppingBag size={16} strokeWidt
