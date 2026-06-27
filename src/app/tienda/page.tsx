@@ -172,8 +172,7 @@ export default async function TiendaPage({ searchParams }: Props) {
   let showWholesale = false
   if (priceVisibility !== 'all') {
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const user = sessionData?.session?.user
+      const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         if (priceVisibility === 'logged_in') {
           showPrices = true
