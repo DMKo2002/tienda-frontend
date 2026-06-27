@@ -174,13 +174,19 @@ export default async function TiendaPage({ searchParams }: Props) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        if (priceVisibility === 'logged_in' || priceVisibility === 'wholesale_only') {
-          const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).single()
+        // Admin ve todo
+        const { data: adminUser } = await supabase.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
+        if (adminUser) {
+          showPrices = true
+          showWholesale = true
+        } else {
+          const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
           const isWholesale = cust?.type === 'wholesale'
+          const isRegistered = !!cust
           if (priceVisibility === 'logged_in') {
-            showPrices = true
+            showPrices = isRegistered
             showWholesale = isWholesale
-          } else {
+          } else if (priceVisibility === 'wholesale_only') {
             showPrices = isWholesale
             showWholesale = isWholesale
           }

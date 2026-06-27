@@ -90,19 +90,27 @@ export default async function ProductoPage({ params }: Props) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('type')
-          .eq('email', user.email ?? '')
-          .eq('tenant_id', TENANT_ID())
-          .single()
-        const isWholesale = customer?.type === 'wholesale'
-        if (priceVisibility === 'logged_in') {
+        // Admin ve todo
+        const { data: adminUser } = await supabase.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
+        if (adminUser) {
           showPrices = true
-          isWholesaleUser = isWholesale
-        } else if (priceVisibility === 'wholesale_only') {
-          showPrices = isWholesale
-          isWholesaleUser = isWholesale
+          isWholesaleUser = true
+        } else {
+          const { data: customer } = await supabase
+            .from('customers')
+            .select('type')
+            .eq('email', user.email ?? '')
+            .eq('tenant_id', TENANT_ID())
+            .maybeSingle()
+          const isWholesale = customer?.type === 'wholesale'
+          const isRegistered = !!customer
+          if (priceVisibility === 'logged_in') {
+            showPrices = isRegistered
+            isWholesaleUser = isWholesale
+          } else if (priceVisibility === 'wholesale_only') {
+            showPrices = isWholesale
+            isWholesaleUser = isWholesale
+          }
         }
       }
     } catch { showPrices = false }
