@@ -1,18 +1,138 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Turnstile from 'react-turnstile'
 
 type Tipo = 'retail' | 'wholesale'
 
+const PROVINCIAS = [
+  'Buenos Aires', 'Ciudad Autónoma de Buenos Aires', 'Catamarca', 'Chaco', 'Chubut',
+  'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+  'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis',
+  'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán',
+]
+
+function EyeIcon({ open }: { open: boolean }) {
+  return open
+    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+}
+
+function LocalidadAutocomplete({
+  value, provincia, onChange, required,
+}: {
+  value: string
+  provincia: string
+  onChange: (v: string) => void
+  required?: boolean
+}) {
+  const [query, setQuery] = useState(value)
+  const [sugerencias, setSugerencias] = useState<string[]>([])
+  const [open, setOpen] = useState(false)
+  const [buscando, setBuscando] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Reset cuando cambia la provincia
+  useEffect(() => {
+    setQuery('')
+    onChange('')
+    setSugerencias([])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provincia])
+
+  // Cierra dropdown al click fuera
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function handleInput(v: string) {
+    setQuery(v)
+    onChange('') // invalida selección hasta que elija
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!provincia || v.length < 2) { setSugerencias([]); setOpen(false); return }
+    debounceRef.current = setTimeout(async () => {
+      setBuscando(true)
+      try {
+        const url = `https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(provincia)}&nombre=${encodeURIComponent(v)}&orden=nombre&max=8&campos=nombre`
+        const res = await fetch(url)
+        const data = await res.json()
+        const nombres: string[] = (data.localidades ?? []).map((l: any) => l.nombre)
+        // deduplica
+        setSugerencias([...new Set(nombres)])
+        setOpen(nombres.length > 0)
+      } catch {
+        setSugerencias([])
+      } finally {
+        setBuscando(false)
+      }
+    }, 300)
+  }
+
+  function seleccionar(nombre: string) {
+    setQuery(nombre)
+    onChange(nombre)
+    setSugerencias([])
+    setOpen(false)
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        type="text"
+        autoComplete="off"
+        className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+        placeholder={provincia ? 'Escribí para buscar...' : 'Primero elegí una provincia'}
+        disabled={!provincia}
+        value={query}
+        onChange={e => handleInput(e.target.value)}
+        onFocus={() => sugerencias.length > 0 && setOpen(true)}
+        required={required}
+        // Campo oculto para que el navegador valide que haya una selección real
+      />
+      {/* input oculto para forzar que seleccionen de la lista */}
+      <input type="hidden" value={value} required={required} />
+      {buscando && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <div className="w-3 h-3 border border-[var(--color-stone)] border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      {open && sugerencias.length > 0 && (
+        <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[var(--color-border)] shadow-lg max-h-48 overflow-y-auto">
+          {sugerencias.map(s => (
+            <li key={s}>
+              <button
+                type="button"
+                onMouseDown={() => seleccionar(s)}
+                className="w-full text-left px-3 py-2 text-sm text-[var(--color-charcoal)] hover:bg-[#F2EEE9] transition-colors"
+              >
+                {s}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {!value && query.length >= 2 && !buscando && sugerencias.length === 0 && open === false && (
+        <p className="mt-1 text-[10px] text-amber-600">Seleccioná una localidad de la lista</p>
+      )}
+    </div>
+  )
+}
+
 export default function RegistroPage() {
   const router = useRouter()
   const [tipo, setTipo] = useState<Tipo>('retail')
   const [form, setForm] = useState({
     nombre: '', apellido: '', email: '', password: '', confirmar: '',
-    empresa: '', cuit: '', direccion: '',
+    empresa: '', cuit: '', direccion: '', provincia: '', localidad: '',
   })
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -33,6 +153,20 @@ export default function RegistroPage() {
       setError('Las contraseñas no coinciden')
       return
     }
+    if (tipo === 'wholesale') {
+      if (!form.empresa || !form.cuit) {
+        setError('Empresa y CUIT son obligatorios para cuentas mayoristas')
+        return
+      }
+      if (!form.provincia || !form.localidad) {
+        setError('Provincia y localidad son obligatorias')
+        return
+      }
+      if (!form.direccion) {
+        setError('La dirección es obligatoria')
+        return
+      }
+    }
     if (!turnstileToken) {
       setError('Completá la verificación de seguridad')
       return
@@ -52,6 +186,8 @@ export default function RegistroPage() {
           empresa: form.empresa || undefined,
           cuit: form.cuit || undefined,
           direccion: form.direccion || undefined,
+          provincia: form.provincia || undefined,
+          localidad: form.localidad || undefined,
           turnstileToken,
         }),
       })
@@ -154,11 +290,48 @@ export default function RegistroPage() {
                   placeholder="20-12345678-9"
                 />
               </div>
+
+              {/* Dirección */}
               <div>
-                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Dirección</label>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Dirección *</label>
                 <input
                   className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                  value={form.direccion} onChange={e => set('direccion', e.target.value)}
+                  placeholder="Ej: Av. Corrientes 1234"
+                  value={form.direccion} onChange={e => set('direccion', e.target.value)} required
+                />
+              </div>
+
+              {/* Provincia */}
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Provincia *</label>
+                <div className="relative">
+                  <select
+                    className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors appearance-none"
+                    value={form.provincia}
+                    onChange={e => set('provincia', e.target.value)}
+                    required
+                  >
+                    <option value="">Seleccioná una provincia</option>
+                    {PROVINCIAS.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Localidad — autocomplete georef */}
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Localidad *</label>
+                <LocalidadAutocomplete
+                  value={form.localidad}
+                  provincia={form.provincia}
+                  onChange={v => set('localidad', v)}
+                  required
                 />
               </div>
             </>
@@ -186,10 +359,7 @@ export default function RegistroPage() {
               />
               <button type="button" onClick={() => setShowPassword(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
-                {showPassword
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                }
+                <EyeIcon open={showPassword} />
               </button>
             </div>
           </div>
@@ -204,10 +374,7 @@ export default function RegistroPage() {
               />
               <button type="button" onClick={() => setShowConfirmar(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
-                {showConfirmar
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                }
+                <EyeIcon open={showConfirmar} />
               </button>
             </div>
           </div>

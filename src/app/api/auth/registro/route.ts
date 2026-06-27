@@ -16,13 +16,15 @@ async function verifyTurnstile(token: string): Promise<boolean> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { nombre, apellido, email, password, tipo, empresa, cuit, direccion, turnstileToken } = body
+    const { nombre, apellido, email, password, tipo, empresa, cuit, direccion, provincia, localidad, turnstileToken } = body
     if (!nombre || !email || !password || !tipo)
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
     if (password.length < 8)
       return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
     if (tipo === 'wholesale' && (!empresa || !cuit))
       return NextResponse.json({ error: 'Empresa y CUIT son obligatorios para cuentas mayoristas' }, { status: 400 })
+    if (tipo === 'wholesale' && (!direccion || !provincia || !localidad))
+      return NextResponse.json({ error: 'Dirección, provincia y localidad son obligatorias' }, { status: 400 })
     if (!turnstileToken)
       return NextResponse.json({ error: 'Verificación de seguridad requerida' }, { status: 400 })
     if (!await verifyTurnstile(turnstileToken))
@@ -60,7 +62,11 @@ export async function POST(req: NextRequest) {
       id: userId, tenant_id: tenantId, email,
       full_name: nombre, last_name: apellido ?? null,
       company_name: empresa ?? null, cuit: cuit ?? null,
-      phone: null, type: tipo, address_street: direccion ?? null, active: true,
+      phone: null, type: tipo,
+      address_street: direccion ?? null,
+      address_province: provincia ?? null,
+      address_city: localidad ?? null,
+      active: true,
     })
 
     return NextResponse.json({ ok: true, confirmacion: !authData?.session })

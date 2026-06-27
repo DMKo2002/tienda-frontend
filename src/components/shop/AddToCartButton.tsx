@@ -280,4 +280,12 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
           </>
         ) : (
           <>
-            <ShoppingBag size={16} strokeWidt
+            <ShoppingBag size={16} strokeWidth={1.5} />
+            Agregar al carrito{showPrices && effectivePrice ? ` — ${formatPrice(effectivePrice * quantity)}` : ''}
+          </>
+        )}
+      </button>
+
+    </div>
+  )
+}
