@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers'
 import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -21,10 +20,6 @@ interface Props {
 export const metadata = { title: 'Tienda' }
 
 export default async function TiendaPage({ searchParams }: Props) {
-  // Read cookies synchronously BEFORE any await (cookies() loses context after await in Next.js 14)
-  const cookieStore = cookies()
-  const isLoggedIn = cookieStore.getAll().some(c => c.name.includes('-auth-token') && c.value.length > 10)
-
   const supabase = await createServerSupabase()
 
   const { data: tenant } = await supabase.from('tenants').select('name').eq('id', TENANT_ID()).single()
@@ -173,28 +168,22 @@ export default async function TiendaPage({ searchParams }: Props) {
   const storeName = tenant?.name ?? 'TIENDA'
   const priceVisibility = (config as any)?.price_visibility ?? 'all'
 
-  // Price visibility using isLoggedIn computed at top (before any await)
   let showPrices = priceVisibility === 'all'
+  let showWholesale = false
   if (priceVisibility !== 'all') {
-    if (isLoggedIn) {
-      showPrices = priceVisibility === 'logged_in' ? true : false
-      if (priceVisibility === 'wholesale_only') {
-        try {
-          const tokenCookie = cookieStore.getAll().find(c => c.name.includes('-auth-token'))
-          if (tokenCookie) {
-            const parts = tokenCookie.value.split('.')
-            if (parts.length >= 2) {
-              const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString())
-              const email = payload?.email ?? ''
-              if (email) {
-                const { data: cust } = await supabase.from('customers').select('type').eq('email', email).eq('tenant_id', TENANT_ID()).single()
-                showPrices = cust?.type === 'wholesale'
-              }
-            }
-          }
-        } catch { showPrices = false }
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
+      if (user) {
+        if (priceVisibility === 'logged_in') {
+          showPrices = true
+        } else if (priceVisibility === 'wholesale_only') {
+          const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).single()
+          showPrices = cust?.type === 'wholesale'
+          showWholesale = showPrices
+        }
       }
-    }
+    } catch { showPrices = false }
   }
 
   return (
@@ -262,6 +251,7 @@ export default async function TiendaPage({ searchParams }: Props) {
                     retailCompareAt={product.retailCompareAt}
                     wholesalePrice={product.wholesalePrice}
                     showPrices={showPrices}
+                    showWholesale={showWholesale}
                     priceVisibility={priceVisibility}
                     colors={product.colors}
                     sizes={product.sizes}
