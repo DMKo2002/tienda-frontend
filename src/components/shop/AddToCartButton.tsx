@@ -235,12 +235,6 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
         )}
       </div>
 
-      {showPrices && wholesalePrice && quantity >= wholesalePrice.min_qty && (
-        <div className="bg-[#F2EEE9] px-4 py-3 text-sm text-[var(--color-charcoal)]">
-          Precio mayorista aplicado: <strong>{formatPrice(wholesalePrice.price)}</strong> por unidad
-        </div>
-      )}
-
       {selectedVariant && !inStock && (
         <p className="text-xs text-red-400 tracking-wide">Sin stock disponible para esta variante</p>
       )}

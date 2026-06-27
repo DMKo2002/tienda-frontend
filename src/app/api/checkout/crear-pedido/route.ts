@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
-      fullName, email, phone,
+      firstName, lastName, fullName, email, phone,
+      cuil,
       addressStreet, addressCity, addressProvince, addressZip,
       shippingMethod, notes, items,
       paymentMethod,
@@ -125,13 +126,15 @@ export async function POST(req: NextRequest) {
         id: user.id,
         tenant_id: TENANT_ID(),
         email: user.email ?? email,
-        full_name: fullName,
+        full_name: firstName || fullName,
+        last_name: lastName || null,
+        cuit: cuil || null,
         phone: phone || null,
         address_street: addressStreet || null,
         address_city: addressCity || null,
         address_province: addressProvince || null,
         address_zip: addressZip || null,
-      }, { onConflict: 'id', ignoreDuplicates: true })
+      }, { onConflict: 'id', ignoreDuplicates: false })
     } else {
       const { data: existing } = await supabase
         .from('customers')
@@ -148,7 +151,9 @@ export async function POST(req: NextRequest) {
           .insert({
             tenant_id: TENANT_ID(),
             email: email.trim(),
-            full_name: fullName.trim(),
+            full_name: (firstName || fullName).trim(),
+            last_name: lastName?.trim() || null,
+            cuit: cuil || null,
             phone: phone || null,
             address_street: addressStreet || null,
             address_city: addressCity || null,

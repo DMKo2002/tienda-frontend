@@ -186,6 +186,8 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          firstName: nombre.trim(),
+          lastName: apellido.trim(),
           fullName: `${nombre.trim()} ${apellido.trim()}`.trim(),
           email: email.trim(),
           phone: phone.trim() || null,
