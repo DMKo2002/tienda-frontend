@@ -239,6 +239,15 @@ export async function POST(req: NextRequest) {
       html: emailConfirmacionCliente(emailPayload),
       fromName: emailFromName,
       replyTo,
+    }).then(({ ok }) => {
+      supabase.from('notifications_log').insert({
+        tenant_id: TENANT_ID(),
+        order_id: order.id,
+        channel: 'email',
+        recipient: email.trim(),
+        subject: `Confirmación pedido #${order.id.slice(0, 8).toUpperCase()}`,
+        status: ok ? 'sent' : 'failed',
+      }).catch(() => {})
     }).catch(e => console.error('[email cliente]', e))
 
     // Al dueño
@@ -256,6 +265,15 @@ export async function POST(req: NextRequest) {
           addressZip: addressZip || null,
         }),
         fromName: emailFromName,
+      }).then(({ ok }) => {
+        supabase.from('notifications_log').insert({
+          tenant_id: TENANT_ID(),
+          order_id: order.id,
+          channel: 'email',
+          recipient: ownerEmail,
+          subject: `Nuevo pedido #${order.id.slice(0, 8).toUpperCase()} — ${storeName}`,
+          status: ok ? 'sent' : 'failed',
+        }).catch(() => {})
       }).catch(e => console.error('[email dueño]', e))
     }
 
