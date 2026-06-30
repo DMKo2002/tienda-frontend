@@ -26,7 +26,7 @@ export default async function HomePage() {
 
   const { data: config } = await supabase
     .from('store_config')
-    .select('logo_url, hero_image_url, hero_eyebrow, hero_title_line1, hero_title_italic, hero_title_line3, hero_season, hero_text_color, whatsapp_number, notification_email, instagram_url, facebook_url, tiktok_url, pickup_address, pickup_enabled, branches, price_visibility')
+    .select('logo_url, hero_image_url, hero_eyebrow, hero_title_line1, hero_title_italic, hero_title_line3, hero_season, hero_text_color, whatsapp_number, notification_email, instagram_url, facebook_url, tiktok_url, pickup_address, pickup_enabled, branches, price_visibility, video_360_url')
     .eq('tenant_id', TENANT_ID())
     .single()
 
@@ -54,7 +54,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Navbar storeName={storeName} logoUrl={config?.logo_url} />
+      <Navbar storeName={storeName} logoUrl={config?.logo_url} tourUrl={(config as any)?.video_360_url} />
 
       <main>
 

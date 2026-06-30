@@ -8,13 +8,14 @@ import { useCart } from '@/components/shop/CartContext'
 interface NavbarProps {
   storeName?: string
   logoUrl?: string | null
+  tourUrl?: string | null
 }
 
 interface Leaf { id: string; name: string; slug: string }
 interface Sub extends Leaf { subcategories: Leaf[] }
 interface Category extends Leaf { subcategories: Sub[] }
 
-export default function Navbar({ storeName = 'TIENDA', logoUrl }: NavbarProps) {
+export default function Navbar({ storeName = 'TIENDA', logoUrl, tourUrl }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
@@ -69,6 +70,12 @@ export default function Navbar({ storeName = 'TIENDA', logoUrl }: NavbarProps) {
                 Tienda
               </Link>
             </div>
+
+            {tourUrl && (
+              <Link href="/tour" className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] hover:text-[var(--color-stone)] transition-colors">
+                Local Virtual
+              </Link>
+            )}
 
             <Link href="/contacto" className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] hover:text-[var(--color-stone)] transition-colors">
               Contacto
@@ -213,6 +220,12 @@ export default function Navbar({ storeName = 'TIENDA', logoUrl }: NavbarProps) {
                 </Link>
               ))}
             </div>
+          )}
+          {tourUrl && (
+            <Link href="/tour" onClick={() => setMenuOpen(false)}
+              className="font-display text-3xl font-light tracking-widest uppercase text-[var(--color-charcoal)]">
+              Local Virtual
+            </Link>
           )}
           <Link href="/contacto" onClick={() => setMenuOpen(false)}
             className="font-display text-3xl font-light tracking-widest uppercase text-[var(--color-charcoal)]">
