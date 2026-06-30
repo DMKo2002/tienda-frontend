@@ -41,6 +41,7 @@ const COLOR_MAP: Record<string, string> = {
 }
 
 function getColorHex(name: string): string {
+  if (/^#[0-9A-Fa-f]{3,6}$/.test(name.trim())) return name.trim()
   return COLOR_MAP[name.toLowerCase().trim()] ?? '#CCCCCC'
 }
 
