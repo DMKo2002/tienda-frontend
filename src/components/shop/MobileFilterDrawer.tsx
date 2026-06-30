@@ -37,7 +37,10 @@ const COLOR_MAP: Record<string, string> = {
   lila: '#B09BC8', violeta: '#8E44AD', morado: '#6C3483',
   camel: '#C19A6B', tabaco: '#8B6355', chocolate: '#5C3A1E', tiza: '#E8E4DC', off: '#F5F2EC',
 }
-function getHex(name: string) { return COLOR_MAP[name.toLowerCase().trim()] ?? '#CCCCCC' }
+function getHex(name: string) {
+  if (/^#[0-9A-Fa-f]{3,6}$/.test(name.trim())) return name.trim()
+  return COLOR_MAP[name.toLowerCase().trim()] ?? '#CCCCCC'
+}
 function isLight(hex: string) {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16)
   return (r*299+g*587+b*114)/1000 > 180
