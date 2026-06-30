@@ -41,19 +41,18 @@ export default function TourPage() {
       <Navbar storeName={storeName} logoUrl={logoUrl} tourUrl={tourUrl} />
 
       <main className="min-h-screen bg-[var(--color-warm-white)] pt-28 pb-20">
-        <div className="max-w-6xl mx-auto px-6">
-
+        <div className="w-full px-4 md:px-8">
           {/* Título */}
-          <div className="mb-10 text-center">
+          <div className="mb-8 text-center">
             <p className="text-[10px] tracking-[0.3em] uppercase text-[var(--color-stone)] mb-2">Experiencia inmersiva</p>
             <h1 className="font-display text-3xl md:text-4xl font-light tracking-[0.1em] uppercase text-[var(--color-charcoal)]">
-              Tour 360°
+              Local Virtual
             </h1>
           </div>
 
-          {/* Iframe Matterport */}
+          {/* Iframe Matterport — full width */}
           {tourUrl ? (
-            <div className="w-full rounded-sm overflow-hidden shadow-sm" style={{ aspectRatio: '16/9' }}>
+            <div className="w-full overflow-hidden shadow-sm" style={{ aspectRatio: '16/9' }}>
               <iframe
                 src={tourUrl}
                 width="100%"
@@ -61,7 +60,7 @@ export default function TourPage() {
                 allowFullScreen
                 allow="xr-spatial-tracking"
                 style={{ border: 'none', display: 'block' }}
-                title="Tour 360°"
+                title="Local Virtual"
               />
             </div>
           ) : (
@@ -73,7 +72,6 @@ export default function TourPage() {
           <p className="text-center text-xs text-[var(--color-stone)] mt-6 tracking-wide">
             Usá el mouse o touch para navegar el espacio en 360°
           </p>
-
         </div>
       </main>
 
