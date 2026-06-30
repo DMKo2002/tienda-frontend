@@ -62,16 +62,42 @@ export async function POST(req: NextRequest) {
       userId = authData.user.id
     }
 
-    await supabase.from('customers').insert({
-      id: userId, tenant_id: tenantId, email,
-      full_name: nombre, last_name: apellido ?? null,
-      company_name: empresa ?? null, cuit: cuit ?? null,
-      phone: null, type: tipo,
-      address_street: direccion ?? null,
-      address_province: provincia ?? null,
-      address_city: localidad ?? null,
-      active: true,
-    })
+    // Verificar si ya existe un customer con este email (importado de WooCommerce u otra tienda)
+    const { data: existingByEmail } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('email', email)
+      .limit(1)
+
+    if (existingByEmail && existingByEmail.length > 0 && existingByEmail[0].id !== userId) {
+      // Existe un customer importado → actualizar su ID al del nuevo auth user
+      // (y actualizar datos que no tenía el import)
+      await supabase.from('customers').update({
+        id: userId,
+        full_name: nombre,
+        last_name: apellido ?? null,
+        type: tipo,
+        company_name: empresa ?? null,
+        cuit: cuit ?? null,
+        ...(direccion ? { address_street: direccion } : {}),
+        ...(provincia ? { address_province: provincia } : {}),
+        ...(localidad ? { address_city: localidad } : {}),
+        active: true,
+      }).eq('id', existingByEmail[0].id).eq('tenant_id', tenantId)
+    } else if (!existingByEmail || existingByEmail.length === 0) {
+      // No existe → insertar nuevo
+      await supabase.from('customers').insert({
+        id: userId, tenant_id: tenantId, email,
+        full_name: nombre, last_name: apellido ?? null,
+        company_name: empresa ?? null, cuit: cuit ?? null,
+        phone: null, type: tipo,
+        address_street: direccion ?? null,
+        address_province: provincia ?? null,
+        address_city: localidad ?? null,
+        active: true,
+      })
+    }
 
     return NextResponse.json({ ok: true, confirmacion: !authData?.session })
   } catch (err: any) {
