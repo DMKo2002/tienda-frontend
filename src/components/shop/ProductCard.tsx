@@ -69,8 +69,10 @@ export default function ProductCard({
             src={coverUrl.split('?')[0]}
             alt={name}
             fill
-            className="object-cover"
+            className="object-cover transition-opacity duration-300"
             sizes="(max-width: 768px) 50vw, 25vw"
+            priority={index < 6}
+            loading={index < 6 ? 'eager' : 'lazy'}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
