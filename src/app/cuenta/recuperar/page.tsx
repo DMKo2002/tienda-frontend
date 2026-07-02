@@ -28,7 +28,13 @@ export default function RecuperarPage() {
     setLoading(false)
 
     if (authError) {
-      setError('No pudimos enviar el email. Verificá que la dirección sea correcta.')
+      // El error más común es que la redirectTo URL no esté en la whitelist de Supabase
+      const msg = authError.message.toLowerCase()
+      if (msg.includes('redirect') || msg.includes('url')) {
+        setError('Error de configuración: el dominio no está autorizado en Supabase. Contactá al administrador.')
+      } else {
+        setError(authError.message)
+      }
       return
     }
 
