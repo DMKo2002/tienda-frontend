@@ -46,6 +46,7 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [exito, setExito] = useState(false)
+  const [confirmacion, setConfirmacion] = useState(false)
 
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
@@ -77,6 +78,7 @@ export default function RegistroPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
+      setConfirmacion(data.confirmacion ?? false)
       setExito(true)
     } catch {
       setError('Error de conexion. Intenta de nuevo.')
@@ -96,7 +98,10 @@ export default function RegistroPage() {
           </div>
           <h1 className="font-display text-3xl font-light text-[var(--color-charcoal)] mb-3">Registro exitoso!</h1>
           <p className="text-sm text-[var(--color-stone)] font-light leading-relaxed mb-6">
-            Te enviamos un email de confirmacion a <strong>{form.email}</strong>. Revisa tu bandeja de entrada para activar tu cuenta.
+            {confirmacion
+              ? <>Te enviamos un email de bienvenida a <strong>{form.email}</strong>. Si hay un link de confirmación, hacé click para activar tu cuenta.</>
+              : <>Tu cuenta fue creada. Recibiste un email de bienvenida en <strong>{form.email}</strong>. Ya podés iniciar sesión.</>
+            }
           </p>
           <Link href="/cuenta/login" className="text-sm text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
             Ir al inicio de sesion

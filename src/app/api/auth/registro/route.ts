@@ -100,16 +100,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Email de bienvenida (fire & forget)
+    // Email de bienvenida
     const { data: tenant } = await supabase.from('tenants').select('name').eq('id', tenantId).single()
     const storeName = tenant?.name ?? 'Tienda'
-    sendEmail({
+    const needsConfirmation = !authData?.session
+    const emailResult = await sendEmail({
       to: email,
       subject: `Bienvenido/a a ${storeName}`,
       html: emailBienvenidaCliente({ storeName, firstName: nombre, storeUrl: siteUrl }),
-    }).catch(e => console.error('[email bienvenida]', e))
+    }).catch(e => { console.error('[email bienvenida]', e); return { ok: false } })
+    console.log(`[registro] email bienvenida a ${email}: ${emailResult.ok ? 'enviado' : 'fallo'}, confirmacion auth: ${needsConfirmation}`)
 
-    return NextResponse.json({ ok: true, confirmacion: !authData?.session })
+    return NextResponse.json({ ok: true, confirmacion: needsConfirmation })
   } catch (err: any) {
     console.error('Error registro:', err)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
