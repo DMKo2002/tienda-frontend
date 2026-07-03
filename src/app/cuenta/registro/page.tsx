@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Turnstile from 'react-turnstile'
@@ -32,104 +32,6 @@ function EyeIcon({ open }: { open: boolean }) {
   )
 }
 
-function LocalidadAutocomplete({
-  value, provincia, onChange,
-}: {
-  value: string
-  provincia: string
-  onChange: (v: string) => void
-}) {
-  const [query, setQuery] = useState(value)
-  const [sugerencias, setSugerencias] = useState<string[]>([])
-  const [open, setOpen] = useState(false)
-  const [buscando, setBuscando] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setQuery('')
-    onChange('')
-    setSugerencias([])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provincia])
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  function handleInput(v: string) {
-    setQuery(v)
-    onChange('')
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (!provincia || v.length < 2) { setSugerencias([]); setOpen(false); return }
-    debounceRef.current = setTimeout(async () => {
-      setBuscando(true)
-      try {
-        const url = `https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(provincia)}&nombre=${encodeURIComponent(v)}&orden=nombre&max=8&campos=nombre`
-        const res = await fetch(url)
-        const data = await res.json()
-        const nombres: string[] = (data.localidades ?? []).map((l: any) => l.nombre)
-        setSugerencias([...new Set(nombres)] as string[])
-        setOpen(nombres.length > 0)
-      } catch {
-        setSugerencias([])
-      } finally {
-        setBuscando(false)
-      }
-    }, 300)
-  }
-
-  function seleccionar(nombre: string) {
-    setQuery(nombre)
-    onChange(nombre)
-    setSugerencias([])
-    setOpen(false)
-  }
-
-  return (
-    <div ref={containerRef} className="relative">
-      <input
-        type="text"
-        autoComplete="off"
-        className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-        placeholder={provincia ? 'Escribi para buscar...' : 'Primero elegi una provincia'}
-        disabled={!provincia}
-        value={query}
-        onChange={e => handleInput(e.target.value)}
-        onFocus={() => sugerencias.length > 0 && setOpen(true)}
-      />
-      {buscando && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <div className="w-3 h-3 border border-[var(--color-stone)] border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-      {open && sugerencias.length > 0 && (
-        <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[var(--color-border)] shadow-lg max-h-48 overflow-y-auto">
-          {sugerencias.map(s => (
-            <li key={s}>
-              <button
-                type="button"
-                onMouseDown={() => seleccionar(s)}
-                className="w-full text-left px-3 py-2 text-sm text-[var(--color-charcoal)] hover:bg-[#F2EEE9] transition-colors"
-              >
-                {s}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!value && query.length >= 2 && !buscando && !open && (
-        <p className="mt-1 text-[10px] text-amber-600">Selecciona una localidad de la lista</p>
-      )}
-    </div>
-  )
-}
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -276,7 +178,14 @@ export default function RegistroPage() {
               </div>
               <div>
                 <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Localidad *</label>
-                <LocalidadAutocomplete value={form.localidad} provincia={form.provincia} onChange={v => set('localidad', v)} />
+                <input
+                  type="text"
+                  className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                  placeholder="Ej: Mar del Plata"
+                  value={form.localidad}
+                  onChange={e => set('localidad', e.target.value)}
+                  required
+                />
               </div>
             </>
           )}
