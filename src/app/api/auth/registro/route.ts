@@ -71,11 +71,10 @@ export async function POST(req: NextRequest) {
       .eq('email', email)
       .limit(1)
 
-    if (existingByEmail && existingByEmail.length > 0 && existingByEmail[0].id !== userId) {
-      // Existe un customer importado → actualizar su ID al del nuevo auth user
-      // (y actualizar datos que no tenía el import)
-      await supabase.from('customers').update({
-        id: userId,
+    if (existingByEmail && existingByEmail.length > 0) {
+      // Existe un customer (importado u otro) → actualizar tipo y datos SIN tocar el id
+      // No cambiamos el id para evitar FK constraint violation (orders.customer_id → customers.id)
+      const { error: updateErr } = await supabase.from('customers').update({
         full_name: nombre,
         last_name: apellido ?? null,
         type: tipo,
@@ -86,6 +85,7 @@ export async function POST(req: NextRequest) {
         ...(localidad ? { address_city: localidad } : {}),
         active: true,
       }).eq('id', existingByEmail[0].id).eq('tenant_id', tenantId)
+      if (updateErr) console.error('[registro] error actualizando customer existente:', updateErr.message)
     } else if (!existingByEmail || existingByEmail.length === 0) {
       // No existe → insertar nuevo
       await supabase.from('customers').insert({
@@ -101,15 +101,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Email de bienvenida
-    const { data: tenant } = await supabase.from('tenants').select('name').eq('id', tenantId).single()
+    const [{ data: tenant }, { data: emailConfig }] = await Promise.all([
+      supabase.from('tenants').select('name').eq('id', tenantId).single(),
+      supabase.from('store_configs').select('email_from_name, reply_to').eq('tenant_id', tenantId).single(),
+    ])
     const storeName = tenant?.name ?? 'Tienda'
     const needsConfirmation = !authData?.session
     const emailResult = await sendEmail({
       to: email,
       subject: `Bienvenido/a a ${storeName}`,
       html: emailBienvenidaCliente({ storeName, firstName: nombre, storeUrl: siteUrl }),
-    }).catch(e => { console.error('[email bienvenida]', e); return { ok: false } })
-    console.log(`[registro] email bienvenida a ${email}: ${emailResult.ok ? 'enviado' : 'fallo'}, confirmacion auth: ${needsConfirmation}`)
+      fromName: emailConfig?.email_from_name ?? storeName,
+      ...(emailConfig?.reply_to ? { replyTo: emailConfig.reply_to } : {}),
+    }).catch(e => { console.error('[email bienvenida] fetch error:', e); return { ok: false } })
+    console.log(`[registro] email bienvenida a ${email}: ${emailResult.ok ? 'ENVIADO OK' : 'FALLO'}, confirmacion auth: ${needsConfirmation}`)
 
     return NextResponse.json({ ok: true, confirmacion: needsConfirmation })
   } catch (err: any) {
