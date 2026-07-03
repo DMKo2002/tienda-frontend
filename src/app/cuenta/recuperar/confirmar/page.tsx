@@ -68,7 +68,7 @@ export default function RecuperarConfirmarPage() {
     setLoading(false)
 
     if (updateError) {
-      setError('No se pudo actualizar la contraseña. El link puede haber expirado.')
+      setError(updateError.message)
       return
     }
 
