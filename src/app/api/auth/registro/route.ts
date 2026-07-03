@@ -112,4 +112,32 @@ export async function POST(req: NextRequest) {
         phone: null, type: tipo,
         address_street: direccion ?? null,
         address_province: provincia ?? null,
-        addr
+        address_city: localidad ?? null,
+        active: true,
+      })
+      if (insertErr) console.error('[registro] INSERT error:', insertErr.message, insertErr.code, JSON.stringify(insertErr.details))
+      else console.log(`[registro] customer insertado OK — id=${userId}, tipo=${tipo}`)
+    }
+
+    // Email de bienvenida
+    const [{ data: tenant }, { data: emailConfig }] = await Promise.all([
+      supabase.from('tenants').select('name').eq('id', tenantId).single(),
+      supabase.from('store_configs').select('email_from_name, reply_to').eq('tenant_id', tenantId).single(),
+    ])
+    const storeName = tenant?.name ?? 'Tienda'
+    const needsConfirmation = !authData?.session
+    const emailResult = await sendEmail({
+      to: email,
+      subject: `Bienvenido/a a ${storeName}`,
+      html: emailBienvenidaCliente({ storeName, firstName: nombre, storeUrl: siteUrl }),
+      fromName: emailConfig?.email_from_name ?? storeName,
+      ...(emailConfig?.reply_to ? { replyTo: emailConfig.reply_to } : {}),
+    }).catch(e => { console.error('[email bienvenida] fetch error:', e); return { ok: false } })
+    console.log(`[registro] email bienvenida a ${email}: ${emailResult.ok ? 'ENVIADO OK' : 'FALLO'}, confirmacion auth: ${needsConfirmation}`)
+
+    return NextResponse.json({ ok: true, confirmacion: needsConfirmation })
+  } catch (err: any) {
+    console.error('Error registro:', err)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}
