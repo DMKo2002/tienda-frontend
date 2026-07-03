@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerSupabase()  // solo para auth (signUp/signIn)
     const service = createServiceSupabase()         // para DB: bypasea RLS
     const tenantId = TENANT_ID()
+    console.log(`[registro] inicio — email=${email}, tipo=${tipo}, tenantId=${tenantId}`)
 
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get('host')}`
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -43,10 +44,12 @@ export async function POST(req: NextRequest) {
         emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     })
+    console.log(`[registro] signUp → user=${authData?.user?.id ?? 'null'}, session=${!!authData?.session}, error=${authError?.message ?? 'none'}`)
 
     let userId: string
 
     if (authError?.message.includes('already registered')) {
+      // Email confirmation OFF: Supabase retorna error explícito
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError || !signInData.user)
         return NextResponse.json(
@@ -59,8 +62,21 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Ya tenés una cuenta en esta tienda. Iniciá sesión.' }, { status: 409 })
     } else if (authError) {
       return NextResponse.json({ error: authError.message }, { status: 400 })
+    } else if (!authData.user) {
+      // Email confirmation ON + email ya existía: Supabase retorna user=null sin error
+      // (email enumeration protection). Buscar customer existente por email.
+      const { data: existingCust } = await service.from('customers').select('id').eq('email', email).eq('tenant_id', tenantId).limit(1)
+      console.log(`[registro] user=null (email ya existía), customer existente=${existingCust?.length ?? 0}`)
+      if (existingCust && existingCust.length > 0) {
+        return NextResponse.json({ error: 'Ya tenés una cuenta en esta tienda. Revisá tu email para confirmarla o iniciá sesión.' }, { status: 409 })
+      }
+      // El auth user existe pero el customer no — buscar userId via admin
+      const { data: { users: adminUsers } } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 })
+      const existingAuthUser = adminUsers?.find((u: any) => u.email === email)
+      if (!existingAuthUser) return NextResponse.json({ error: 'Error al procesar el registro. Intentá de nuevo.' }, { status: 500 })
+      userId = existingAuthUser.id
+      console.log(`[registro] auth user encontrado via admin: ${userId}`)
     } else {
-      if (!authData.user) return NextResponse.json({ error: 'Error al crear el usuario' }, { status: 500 })
       userId = authData.user.id
     }
 
@@ -96,31 +112,4 @@ export async function POST(req: NextRequest) {
         phone: null, type: tipo,
         address_street: direccion ?? null,
         address_province: provincia ?? null,
-        address_city: localidad ?? null,
-        active: true,
-      })
-      if (insertErr) console.error('[registro] error insertando nuevo customer:', insertErr.message)
-    }
-
-    // Email de bienvenida
-    const [{ data: tenant }, { data: emailConfig }] = await Promise.all([
-      supabase.from('tenants').select('name').eq('id', tenantId).single(),
-      supabase.from('store_configs').select('email_from_name, reply_to').eq('tenant_id', tenantId).single(),
-    ])
-    const storeName = tenant?.name ?? 'Tienda'
-    const needsConfirmation = !authData?.session
-    const emailResult = await sendEmail({
-      to: email,
-      subject: `Bienvenido/a a ${storeName}`,
-      html: emailBienvenidaCliente({ storeName, firstName: nombre, storeUrl: siteUrl }),
-      fromName: emailConfig?.email_from_name ?? storeName,
-      ...(emailConfig?.reply_to ? { replyTo: emailConfig.reply_to } : {}),
-    }).catch(e => { console.error('[email bienvenida] fetch error:', e); return { ok: false } })
-    console.log(`[registro] email bienvenida a ${email}: ${emailResult.ok ? 'ENVIADO OK' : 'FALLO'}, confirmacion auth: ${needsConfirmation}`)
-
-    return NextResponse.json({ ok: true, confirmacion: needsConfirmation })
-  } catch (err: any) {
-    console.error('Error registro:', err)
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
-  }
-}
+        addr
