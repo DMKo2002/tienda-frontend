@@ -11,6 +11,7 @@ interface Props {
     orden?: string
     q?: string
     color?: string
+    talle?: string
     precio_min?: string
     precio_max?: string
     descuento?: string
@@ -117,6 +118,14 @@ export default async function TiendaPage({ searchParams }: Props) {
     )
   }
 
+  // Filter by size
+  if (searchParams.talle) {
+    const talleFilter = searchParams.talle.toUpperCase().trim()
+    products = products.filter((p: any) =>
+      p.sizes.some((s: string) => s.toUpperCase().trim() === talleFilter)
+    )
+  }
+
   // Filter by price range
   if (precioMin !== undefined) {
     products = products.filter((p: any) => p.retailPrice !== undefined && p.retailPrice >= precioMin)
@@ -148,6 +157,23 @@ export default async function TiendaPage({ searchParams }: Props) {
       (p.variants ?? []).map((v: any) => v.color).filter(Boolean)
     )
   )].sort() as string[]
+
+  // Available sizes for filter sidebar — sorted in standard clothing order
+  const SIZE_ORDER = ['XS','S','M','L','XL','XXL','XXXL','3XL','4XL']
+  const allSizes = [...new Set(
+    (allProducts ?? []).flatMap((p: any) =>
+      (p.variants ?? []).map((v: any) => v.size).filter(Boolean)
+    )
+  )].sort((a: any, b: any) => {
+    const ai = SIZE_ORDER.indexOf(String(a).toUpperCase())
+    const bi = SIZE_ORDER.indexOf(String(b).toUpperCase())
+    if (ai !== -1 && bi !== -1) return ai - bi
+    if (ai !== -1) return -1
+    if (bi !== -1) return 1
+    const an = parseInt(a), bn = parseInt(b)
+    if (!isNaN(an) && !isNaN(bn)) return an - bn
+    return String(a).localeCompare(String(b))
+  }) as string[]
 
   // Count products per category (before any filter)
   const productCountByCat: Record<string, number> = {}
@@ -227,11 +253,13 @@ export default async function TiendaPage({ searchParams }: Props) {
               <CatalogFilters
                 categories={categoriesWithCount}
                 availableColors={allColors}
+                availableSizes={allSizes}
                 maxPrice={0}
                 currentCat={searchParams.cat}
                 currentOrden={searchParams.orden}
                 currentQ={searchParams.q}
                 currentColor={searchParams.color}
+                currentTalle={searchParams.talle}
                 currentPrecioMin={precioMin}
                 currentPrecioMax={precioMax}
                 currentDescuento={soloDescuento}
@@ -244,14 +272,16 @@ export default async function TiendaPage({ searchParams }: Props) {
               <MobileFilterDrawer
                 categories={categoriesWithCount}
                 availableColors={allColors}
+                availableSizes={allSizes}
                 currentCat={searchParams.cat}
                 currentOrden={searchParams.orden}
                 currentQ={searchParams.q}
                 currentColor={searchParams.color}
+                currentTalle={searchParams.talle}
                 currentPrecioMin={precioMin}
                 currentPrecioMax={precioMax}
                 currentDescuento={soloDescuento}
-                activeFilterCount={[searchParams.cat, searchParams.color, searchParams.precio_min, searchParams.precio_max, searchParams.descuento, searchParams.q].filter(Boolean).length}
+                activeFilterCount={[searchParams.cat, searchParams.color, searchParams.talle, searchParams.precio_min, searchParams.precio_max, searchParams.descuento, searchParams.q].filter(Boolean).length}
               />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-12">
                 {products.map((product: any, i: number) => (

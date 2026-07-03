@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
+import { sendEmail, emailBienvenidaCliente } from '@/lib/email'
 
 async function verifyTurnstile(token: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
@@ -98,6 +99,15 @@ export async function POST(req: NextRequest) {
         active: true,
       })
     }
+
+    // Email de bienvenida (fire & forget)
+    const { data: tenant } = await supabase.from('tenants').select('name').eq('id', tenantId).single()
+    const storeName = tenant?.name ?? 'Tienda'
+    sendEmail({
+      to: email,
+      subject: `Bienvenido/a a ${storeName}`,
+      html: emailBienvenidaCliente({ storeName, firstName: nombre, storeUrl: siteUrl }),
+    }).catch(e => console.error('[email bienvenida]', e))
 
     return NextResponse.json({ ok: true, confirmacion: !authData?.session })
   } catch (err: any) {

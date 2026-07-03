@@ -17,10 +17,12 @@ interface Category {
 interface Props {
   categories: Category[]
   availableColors: string[]
+  availableSizes: string[]
   currentCat?: string
   currentOrden?: string
   currentQ?: string
   currentColor?: string
+  currentTalle?: string
   currentPrecioMin?: number
   currentPrecioMax?: number
   currentDescuento?: boolean
@@ -47,8 +49,8 @@ function isLight(hex: string) {
 }
 
 export default function MobileFilterDrawer({
-  categories, availableColors,
-  currentCat, currentOrden, currentQ, currentColor,
+  categories, availableColors, availableSizes,
+  currentCat, currentOrden, currentQ, currentColor, currentTalle,
   currentPrecioMin, currentPrecioMax, currentDescuento,
   activeFilterCount,
 }: Props) {
@@ -63,6 +65,7 @@ export default function MobileFilterDrawer({
     if (currentOrden) p.orden = currentOrden
     if (currentQ) p.q = currentQ
     if (currentColor) p.color = currentColor
+    if (currentTalle) p.talle = currentTalle
     if (currentPrecioMin) p.precio_min = String(currentPrecioMin)
     if (currentPrecioMax) p.precio_max = String(currentPrecioMax)
     if (currentDescuento) p.descuento = '1'
@@ -171,6 +174,30 @@ export default function MobileFilterDrawer({
                 </div>
               )}
 
+              {/* Talles */}
+              {availableSizes.length > 0 && (
+                <div>
+                  <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Talle</p>
+                  <div className="flex flex-wrap gap-2">
+                    {availableSizes.map(size => {
+                      const active = currentTalle?.toUpperCase() === size.toUpperCase()
+                      return (
+                        <button key={size}
+                          onClick={() => go(buildUrl({ talle: active ? undefined : size }))}
+                          className={`h-8 px-3 text-xs border transition-colors rounded-sm ${
+                            active
+                              ? 'border-[var(--color-charcoal)] bg-[var(--color-charcoal)] text-white'
+                              : 'border-[var(--color-border)] text-[var(--color-charcoal)]'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Precio */}
               <div>
                 <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Precio</p>
@@ -219,7 +246,7 @@ export default function MobileFilterDrawer({
             </div>
 
             {/* Footer — limpiar */}
-            {(currentCat||currentColor||currentPrecioMin||currentPrecioMax||currentDescuento||currentQ) && (
+            {(currentCat||currentColor||currentTalle||currentPrecioMin||currentPrecioMax||currentDescuento||currentQ) && (
               <div className="px-5 py-4 border-t border-[var(--color-border)]">
                 <button onClick={() => go('/tienda')}
                   className="w-full py-2.5 text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors underline">

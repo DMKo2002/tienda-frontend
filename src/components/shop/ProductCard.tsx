@@ -52,12 +52,13 @@ export default function ProductCard({
   showWholesale = false, showPrices = true, priceVisibility = 'all', index = 0, colors = [], sizes = []
 }: ProductCardProps) {
 
-  // compare_at_price = precio rebajado (el más bajo, el que paga el cliente)
-  // price = precio regular (el tachado cuando hay rebaja)
-  const hasDiscount = !!(retailCompareAt && retailCompareAt > 0 && retailCompareAt < (retailPrice ?? Infinity))
-  const salePrice   = hasDiscount ? retailCompareAt! : retailPrice
+  // Props pre-procesadas desde tienda/page.tsx:
+  //   retailPrice     = precio efectivo (lo que paga el cliente, ej: 18000)
+  //   retailCompareAt = precio regular tachado (el más alto, ej: 20000)
+  const hasDiscount = !!(retailCompareAt && retailCompareAt > (retailPrice ?? 0))
+  const salePrice   = retailPrice
   const discountPct = hasDiscount
-    ? Math.round((1 - retailCompareAt! / retailPrice!) * 100)
+    ? Math.round((1 - retailPrice! / retailCompareAt!) * 100)
     : null
 
   return (
@@ -109,7 +110,7 @@ export default function ProductCard({
                   </span>
                   {hasDiscount && (
                     <span className="text-xs text-[var(--color-stone)] line-through">
-                      {formatPrice(retailPrice!)}
+                      {formatPrice(retailCompareAt!)}
                     </span>
                   )}
                   {showWholesale && wholesalePrice && (

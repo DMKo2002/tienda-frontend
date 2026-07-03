@@ -1,21 +1,32 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import LogoutButton from '@/components/cuenta/LogoutButton'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+
+function createServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  )
+}
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendiente', confirmed: 'Confirmado', shipped: 'En camino',
+  ready_pickup: 'Listo para retirar',
   delivered: 'Entregado', cancelled: 'Cancelado',
 }
 const STATUS_COLOR: Record<string, string> = {
   pending: 'text-amber-600 bg-amber-50 border-amber-200',
   confirmed: 'text-blue-600 bg-blue-50 border-blue-200',
   shipped: 'text-violet-600 bg-violet-50 border-violet-200',
+  ready_pickup: 'text-teal-600 bg-teal-50 border-teal-200',
   delivered: 'text-green-600 bg-green-50 border-green-200',
   cancelled: 'text-red-500 bg-red-50 border-red-200',
 }
@@ -27,16 +38,34 @@ export default async function CuentaPage() {
 
   if (!user) redirect('/cuenta/login')
 
-  const [{ data: config }, { data: tenant }, { data: customer }, { data: orders }] = await Promise.all([
+  const service = createServiceClient()
+
+  const [{ data: config }, { data: tenant }] = await Promise.all([
     supabase.from('store_config').select('logo_url, whatsapp_number, notification_email').eq('tenant_id', TENANT_ID()).single(),
     supabase.from('tenants').select('name').eq('id', TENANT_ID()).single(),
-    supabase.from('customers').select('*').eq('id', user!.id).single(),
-    supabase.from('orders')
-      .select('id, status, total, shipping_cost, created_at, payment_method, order_items(product_name, quantity, unit_price)')
-      .eq('customer_id', user!.id)
-      .order('created_at', { ascending: false })
-      .limit(20),
   ])
+
+  // Buscar customer: primero por auth user id, luego por email (cubre customers importados)
+  let customer: any = null
+  const { data: custById } = await service
+    .from('customers').select('*').eq('id', user!.id).eq('tenant_id', TENANT_ID()).maybeSingle()
+  if (custById) {
+    customer = custById
+  } else {
+    const { data: custByEmail } = await service
+      .from('customers').select('*').eq('email', user!.email!).eq('tenant_id', TENANT_ID()).maybeSingle()
+    customer = custByEmail
+  }
+
+  // Pedidos: usar el ID real del customer (puede diferir del auth user id si fue importado)
+  const actualCustomerId = customer?.id ?? user!.id
+  const { data: orders } = await service
+    .from('orders')
+    .select('id, status, total, shipping_cost, created_at, payment_method, order_items(product_name, quantity, unit_price)')
+    .eq('customer_id', actualCustomerId)
+    .eq('tenant_id', TENANT_ID())
+    .order('created_at', { ascending: false })
+    .limit(20)
 
   const storeName = tenant?.name ?? 'TIENDA'
   const isMayorista = customer?.type === 'wholesale'
