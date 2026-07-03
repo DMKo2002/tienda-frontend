@@ -223,9 +223,9 @@ export default async function TiendaPage({ searchParams }: Props) {
           const isWholesale = cust?.type === 'wholesale'
           const isRegistered = !!cust
           if (priceVisibility === 'logged_in') {
-            // Cualquier usuario registrado (retail o wholesale) ve ambos precios
+            // Cualquier registrado ve precios retail; solo mayoristas ven precio mayorista
             showPrices = isRegistered
-            showWholesale = isRegistered
+            showWholesale = isWholesale
           } else if (priceVisibility === 'wholesale_only') {
             // Solo mayoristas ven precios; retail logueado ve mensaje diferente
             showPrices = isWholesale
