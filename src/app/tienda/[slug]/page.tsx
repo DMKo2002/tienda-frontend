@@ -1,4 +1,4 @@
-import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
+import { createServerSupabase, createServiceSupabase, TENANT_ID } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -89,13 +89,15 @@ export default async function ProductoPage({ params }: Props) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
+      const service = createServiceSupabase()
       // Admin ve todo
-      const { data: adminUser } = await supabase.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
-      if (adminUser) {
+      const { data: adminRows } = await service.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).limit(1)
+      if (adminRows && adminRows.length > 0) {
         showPrices = true
         isWholesaleUser = true
       } else {
-        const { data: customer } = await supabase
+        // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
+        const { data: customer } = await service
           .from('customers')
           .select('type')
           .eq('email', user.email ?? '')

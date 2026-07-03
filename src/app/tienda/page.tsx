@@ -1,4 +1,4 @@
-import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
+import { createServerSupabase, createServiceSupabase, TENANT_ID } from '@/lib/supabase-server'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import ProductCard from '@/components/shop/ProductCard'
@@ -204,13 +204,15 @@ export default async function TiendaPage({ searchParams }: Props) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      // Admin ve todo
-      const { data: adminUser } = await supabase.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
-      if (adminUser) {
+      const service = createServiceSupabase()
+      // Admin ve todo (usar service para bypasear RLS en users también)
+      const { data: adminUser } = await service.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).limit(1)
+      if (adminUser && adminUser.length > 0) {
         showPrices = true
         showWholesale = true
       } else {
-        const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
+        // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
+        const { data: cust } = await service.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
         const isWholesale = cust?.type === 'wholesale'
         const isRegistered = !!cust
         if (priceVisibility === 'all') {

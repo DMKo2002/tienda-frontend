@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
+import { createServerSupabase, createServiceSupabase, TENANT_ID } from '@/lib/supabase-server'
 import { sendEmail, emailBienvenidaCliente } from '@/lib/email'
 
 async function verifyTurnstile(token: string): Promise<boolean> {
@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
     if (!await verifyTurnstile(turnstileToken))
       return NextResponse.json({ error: 'Verificación de seguridad fallida. Intentá de nuevo.' }, { status: 400 })
 
-    const supabase = await createServerSupabase()
+    const supabase = await createServerSupabase()  // solo para auth (signUp/signIn)
+    const service = createServiceSupabase()         // para DB: bypasea RLS
     const tenantId = TENANT_ID()
 
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get('host')}`
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         )
       userId = signInData.user.id
-      const { data: existing } = await supabase.from('customers').select('id').eq('id', userId).eq('tenant_id', tenantId).maybeSingle()
+      const { data: existing } = await service.from('customers').select('id').eq('id', userId).eq('tenant_id', tenantId).maybeSingle()
       if (existing)
         return NextResponse.json({ error: 'Ya tenés una cuenta en esta tienda. Iniciá sesión.' }, { status: 409 })
     } else if (authError) {
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verificar si ya existe un customer con este email (importado de WooCommerce u otra tienda)
-    const { data: existingByEmail } = await supabase
+    const { data: existingByEmail } = await service
       .from('customers')
       .select('id')
       .eq('tenant_id', tenantId)
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
     if (existingByEmail && existingByEmail.length > 0) {
       // Existe un customer (importado u otro) → actualizar tipo y datos SIN tocar el id
       // No cambiamos el id para evitar FK constraint violation (orders.customer_id → customers.id)
-      const { error: updateErr } = await supabase.from('customers').update({
+      const { error: updateErr } = await service.from('customers').update({
         full_name: nombre,
         last_name: apellido ?? null,
         type: tipo,
@@ -86,9 +87,9 @@ export async function POST(req: NextRequest) {
         active: true,
       }).eq('id', existingByEmail[0].id).eq('tenant_id', tenantId)
       if (updateErr) console.error('[registro] error actualizando customer existente:', updateErr.message)
-    } else if (!existingByEmail || existingByEmail.length === 0) {
-      // No existe → insertar nuevo
-      await supabase.from('customers').insert({
+    } else {
+      // No existe → insertar nuevo (service client bypasea RLS del INSERT)
+      const { error: insertErr } = await service.from('customers').insert({
         id: userId, tenant_id: tenantId, email,
         full_name: nombre, last_name: apellido ?? null,
         company_name: empresa ?? null, cuit: cuit ?? null,
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
         address_city: localidad ?? null,
         active: true,
       })
+      if (insertErr) console.error('[registro] error insertando nuevo customer:', insertErr.message)
     }
 
     // Email de bienvenida
