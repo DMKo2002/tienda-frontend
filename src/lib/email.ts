@@ -26,7 +26,7 @@ export async function sendEmail({
     console.warn('[email] RESEND_API_KEY no configurada — email omitido')
     return { ok: false }
   }
-  const baseFrom = from ?? process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
+  const baseFrom = from ?? process.env.EMAIL_FROM ?? 'noreply@base153.com'
   // Si hay nombre de remitente: "Connors Store <noreply@creart.com>"
   const sender = fromName ? `${fromName} <${baseFrom}>` : baseFrom
   try {
