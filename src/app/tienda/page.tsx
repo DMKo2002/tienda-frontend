@@ -201,30 +201,31 @@ export default async function TiendaPage({ searchParams }: Props) {
 
   let showPrices = priceVisibility === 'all'
   let showWholesale = false
-  if (priceVisibility !== 'all') {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        // Admin ve todo
-        const { data: adminUser } = await supabase.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
-        if (adminUser) {
-          showPrices = true
-          showWholesale = true
-        } else {
-          const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
-          const isWholesale = cust?.type === 'wholesale'
-          const isRegistered = !!cust
-          if (priceVisibility === 'logged_in') {
-            showPrices = isRegistered
-            showWholesale = isWholesale
-          } else if (priceVisibility === 'wholesale_only') {
-            showPrices = isWholesale
-            showWholesale = isWholesale
-          }
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      // Admin ve todo
+      const { data: adminUser } = await supabase.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
+      if (adminUser) {
+        showPrices = true
+        showWholesale = true
+      } else {
+        const { data: cust } = await supabase.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
+        const isWholesale = cust?.type === 'wholesale'
+        const isRegistered = !!cust
+        if (priceVisibility === 'all') {
+          // Todos ven precios retail; mayoristas además ven precios mayoristas
+          showWholesale = isWholesale
+        } else if (priceVisibility === 'logged_in') {
+          showPrices = isRegistered
+          showWholesale = isWholesale
+        } else if (priceVisibility === 'wholesale_only') {
+          showPrices = isWholesale
+          showWholesale = isWholesale
         }
       }
-    } catch { showPrices = false }
-  }
+    }
+  } catch { /* si no hay sesión, mantener defaults */ }
 
   return (
     <>
