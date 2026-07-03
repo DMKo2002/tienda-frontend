@@ -9,7 +9,7 @@ interface Variant {
   size: string | null
   color: string | null
   stock: number
-  price_rules: { type: string; price: number; min_qty: number; active: boolean }[]
+  price_rules: { type: string; price: number; compare_at_price?: number; min_qty: number; active: boolean }[]
 }
 
 interface AddToCartButtonProps {
@@ -89,7 +89,11 @@ export default function AddToCartButton({ product, sizes, colors, showPrices = t
     return sizeMatch && colorMatch
   })
 
-  const retailPrice = selectedVariant?.price_rules?.find(p => p.type === 'retail' && p.active)?.price
+  const retailRule = selectedVariant?.price_rules?.find(p => p.type === 'retail' && p.active)
+  const retailRegular = retailRule?.price
+  const retailRebajado = (retailRule?.compare_at_price ?? 0) > 0 && (retailRule?.compare_at_price ?? 0) < (retailRegular ?? Infinity)
+    ? retailRule!.compare_at_price! : undefined
+  const retailPrice = retailRebajado ?? retailRegular
   const wholesalePrice = isWholesale
     ? selectedVariant?.price_rules?.find(p => p.type === 'wholesale' && p.active)
     : undefined

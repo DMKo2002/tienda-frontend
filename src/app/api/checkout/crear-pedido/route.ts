@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     const { data: priceRulesData, error: priceErr } = await supabase
       .from('price_rules')
-      .select('variant_id, type, price, min_qty, active')
+      .select('variant_id, type, price, compare_at_price, min_qty, active')
       .in('variant_id', variantIds)
       .eq('active', true)
 
@@ -93,7 +93,10 @@ export async function POST(req: NextRequest) {
         actualPrice = wholesaleRule.price
         actualPriceType = 'wholesale'
       } else if (retailRule) {
-        actualPrice = retailRule.price
+        // compare_at_price = precio rebajado (más bajo); si existe y es menor, cobrar ese
+        actualPrice = (retailRule.compare_at_price > 0 && retailRule.compare_at_price < retailRule.price)
+          ? retailRule.compare_at_price
+          : retailRule.price
         actualPriceType = 'retail'
       } else if (wholesaleRule) {
         // Producto sin precio minorista — usar precio mayorista igual

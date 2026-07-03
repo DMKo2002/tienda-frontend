@@ -93,8 +93,13 @@ export default async function TiendaPage({ searchParams }: Props) {
     const wholesaleRule = product.variants?.[0]?.price_rules?.find(
       (p: any) => p.type === 'wholesale' && p.active
     )
-    const retailPrice: number | undefined = retailRule?.price
-    const retailCompareAt: number | undefined = retailRule?.compare_at_price ?? undefined
+    const retailRegular: number | undefined = retailRule?.price
+    const retailRebajado: number | undefined =
+      (retailRule?.compare_at_price > 0 && retailRule?.compare_at_price < (retailRule?.price ?? Infinity))
+        ? retailRule?.compare_at_price
+        : undefined
+    const retailPrice: number | undefined = retailRebajado ?? retailRegular  // precio efectivo (lo que paga)
+    const retailCompareAt: number | undefined = retailRebajado ? retailRegular : undefined  // precio tachado
     const wholesalePrice: number | undefined = wholesaleRule?.price
 
     const colors = [...new Set((product.variants ?? []).map((v: any) => v.color).filter(Boolean))] as string[]

@@ -52,9 +52,12 @@ export default function ProductCard({
   showWholesale = false, showPrices = true, priceVisibility = 'all', index = 0, colors = [], sizes = []
 }: ProductCardProps) {
 
-  const hasDiscount = retailCompareAt && retailCompareAt > (retailPrice ?? 0)
+  // compare_at_price = precio rebajado (el más bajo, el que paga el cliente)
+  // price = precio regular (el tachado cuando hay rebaja)
+  const hasDiscount = !!(retailCompareAt && retailCompareAt > 0 && retailCompareAt < (retailPrice ?? Infinity))
+  const salePrice   = hasDiscount ? retailCompareAt! : retailPrice
   const discountPct = hasDiscount
-    ? Math.round((1 - (retailPrice! / retailCompareAt!)) * 100)
+    ? Math.round((1 - retailCompareAt! / retailPrice!) * 100)
     : null
 
   return (
@@ -99,14 +102,14 @@ export default function ProductCard({
         <div className="flex items-center gap-2 mb-2.5">
           {showPrices ? (
             <>
-              {retailPrice ? (
+              {salePrice ? (
                 <>
                   <span className={`text-sm ${hasDiscount ? 'text-[var(--color-charcoal)] font-medium' : 'text-[var(--color-charcoal)]'}`}>
-                    {formatPrice(retailPrice)}
+                    {formatPrice(salePrice)}
                   </span>
                   {hasDiscount && (
                     <span className="text-xs text-[var(--color-stone)] line-through">
-                      {formatPrice(retailCompareAt!)}
+                      {formatPrice(retailPrice!)}
                     </span>
                   )}
                   {showWholesale && wholesalePrice && (

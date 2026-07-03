@@ -123,7 +123,12 @@ export default async function ProductoPage({ params }: Props) {
   const wholesaleRule = product.variants?.[0]?.price_rules?.find((p: any) => p.type === 'wholesale' && p.active)
 
   const coverImage = images[0]?.url ?? null
-  const retailPrice = retailRule?.price
+  const retailRegular: number | undefined = retailRule?.price
+  const retailRebajado: number | undefined =
+    (retailRule?.compare_at_price > 0 && retailRule?.compare_at_price < (retailRule?.price ?? Infinity))
+      ? retailRule?.compare_at_price : undefined
+  const retailPrice = retailRebajado ?? retailRegular
+  const retailCompareAt = retailRebajado ? retailRegular : undefined
   const jsonLd = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
@@ -168,9 +173,16 @@ export default async function ProductoPage({ params }: Props) {
                 {showPrices ? (
                   <>
                     {retailRule && (
-                      <p className="text-2xl font-light text-[var(--color-charcoal)]">
-                        {formatPrice(retailRule.price)}
-                      </p>
+                      <div>
+                        <p className="text-2xl font-light text-[var(--color-charcoal)]">
+                          {formatPrice(retailPrice!)}
+                        </p>
+                        {retailCompareAt && (
+                          <p className="text-sm text-[var(--color-stone)] line-through mt-0.5">
+                            {formatPrice(retailCompareAt)}
+                          </p>
+                        )}
+                      </div>
                     )}
                     {isWholesaleUser && wholesaleRule && (
                       <p className="text-sm text-[var(--color-stone)] mt-1">
