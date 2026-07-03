@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, SlidersHorizontal } from 'lucide-react'
+import { X, SlidersHorizontal, ChevronDown } from 'lucide-react'
 
 interface Subcategory {
   id: string; name: string; slug: string
@@ -48,16 +48,38 @@ function isLight(hex: string) {
   return (r*299+g*587+b*114)/1000 > 180
 }
 
+function SectionHeader({ label, open, onToggle, active }: { label: string; open: boolean; onToggle: () => void; active?: boolean }) {
+  return (
+    <button onClick={onToggle} className="w-full flex items-center justify-between py-1">
+      <p className={`text-[10px] tracking-[0.2em] uppercase ${active ? 'text-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
+        {label}{active ? ' ·' : ''}
+      </p>
+      <ChevronDown size={13} className={`text-[var(--color-stone)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+    </button>
+  )
+}
+
 export default function MobileFilterDrawer({
   categories, availableColors, availableSizes,
   currentCat, currentOrden, currentQ, currentColor, currentTalle,
   currentPrecioMin, currentPrecioMax, currentDescuento,
   activeFilterCount,
 }: Props) {
-  const [open, setOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [precioMin, setPrecioMin] = useState(String(currentPrecioMin ?? ''))
   const [precioMax, setPrecioMax] = useState(String(currentPrecioMax ?? ''))
   const router = useRouter()
+
+  const [open, setOpen] = useState({
+    categorias: !!currentCat,
+    colores: !!currentColor,
+    talles: !!currentTalle,
+    precio: !!(currentPrecioMin || currentPrecioMax),
+    ordenar: !!currentOrden,
+  })
+  function toggle(key: keyof typeof open) {
+    setOpen(s => ({ ...s, [key]: !s[key] }))
+  }
 
   function buildUrl(overrides: Record<string, string | undefined>) {
     const p: Record<string, string> = {}
@@ -74,7 +96,7 @@ export default function MobileFilterDrawer({
     return `/tienda${qs ? '?'+qs : ''}`
   }
 
-  function go(url: string) { router.push(url); setOpen(false) }
+  function go(url: string) { router.push(url); setDrawerOpen(false) }
 
   function applyPrecio(e: React.FormEvent) {
     e.preventDefault()
@@ -89,7 +111,7 @@ export default function MobileFilterDrawer({
           {activeFilterCount > 0 ? `${activeFilterCount} filtro${activeFilterCount>1?'s':''} activo${activeFilterCount>1?'s':''}` : ''}
         </p>
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => setDrawerOpen(true)}
           className="flex items-center gap-2 px-4 py-2 border border-[var(--color-charcoal)] text-xs tracking-[0.12em] uppercase text-[var(--color-charcoal)]"
         >
           <SlidersHorizontal size={13} strokeWidth={1.5} />
@@ -98,126 +120,135 @@ export default function MobileFilterDrawer({
       </div>
 
       {/* Drawer overlay */}
-      {open && (
+      {drawerOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
 
-          {/* Panel desde la derecha */}
           <div className="absolute top-0 right-0 bottom-0 w-[85vw] max-w-sm bg-[var(--color-warm-white)] overflow-y-auto flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] sticky top-0 bg-[var(--color-warm-white)] z-10">
               <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-charcoal)]">Filtros</p>
-              <button onClick={() => setOpen(false)}>
+              <button onClick={() => setDrawerOpen(false)}>
                 <X size={18} strokeWidth={1.5} className="text-[var(--color-charcoal)]" />
               </button>
             </div>
 
-            <div className="flex-1 px-5 py-6 space-y-8">
+            <div className="flex-1 px-5 py-2">
+
               {/* Categorías */}
-              <div>
-                <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Categorías</p>
-                <ul className="space-y-2">
-                  <li>
-                    <button onClick={() => go(buildUrl({cat:undefined}))}
-                      className={`text-sm font-light transition-colors ${!currentCat ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
-                      Todos
-                    </button>
-                  </li>
-                  {categories.map(cat => (
-                    <li key={cat.id}>
-                      <button onClick={() => go(buildUrl({cat:cat.slug}))}
-                        className={`text-sm font-light transition-colors ${currentCat===cat.slug ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
-                        {cat.name}{cat.productCount ? <span className="ml-1 text-[10px] text-[var(--color-stone)]/60">({cat.productCount})</span> : null}
+              <div className="border-b border-[var(--color-border)] py-4">
+                <SectionHeader label="Categorías" open={open.categorias} onToggle={() => toggle('categorias')} active={!!currentCat} />
+                {open.categorias && (
+                  <ul className="mt-3 space-y-2">
+                    <li>
+                      <button onClick={() => go(buildUrl({cat:undefined}))}
+                        className={`text-sm font-light transition-colors ${!currentCat ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
+                        Todos
                       </button>
-                      {cat.subcategories.length > 0 && (
-                        <ul className="mt-1.5 ml-3 space-y-1.5 border-l border-[var(--color-border)] pl-3">
-                          {cat.subcategories.map(sub => (
-                            <li key={sub.id}>
-                              <button onClick={() => go(buildUrl({cat:sub.slug}))}
-                                className={`text-xs font-light transition-colors ${currentCat===sub.slug ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
-                                {sub.name}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                     </li>
-                  ))}
-                </ul>
+                    {categories.map(cat => (
+                      <li key={cat.id}>
+                        <button onClick={() => go(buildUrl({cat:cat.slug}))}
+                          className={`text-sm font-light transition-colors ${currentCat===cat.slug ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
+                          {cat.name}{cat.productCount ? <span className="ml-1 text-[10px] text-[var(--color-stone)]/60">({cat.productCount})</span> : null}
+                        </button>
+                        {cat.subcategories.length > 0 && (
+                          <ul className="mt-1.5 ml-3 space-y-1.5 border-l border-[var(--color-border)] pl-3">
+                            {cat.subcategories.map(sub => (
+                              <li key={sub.id}>
+                                <button onClick={() => go(buildUrl({cat:sub.slug}))}
+                                  className={`text-xs font-light transition-colors ${currentCat===sub.slug ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
+                                  {sub.name}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Colores */}
               {availableColors.length > 0 && (
-                <div>
-                  <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Color</p>
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map(color => {
-                      const hex = getHex(color)
-                      const light = isLight(hex)
-                      const active = currentColor === color
-                      return (
-                        <button key={color} title={color}
-                          onClick={() => go(buildUrl({color: active ? undefined : color}))}
-                          style={{backgroundColor: hex}}
-                          className={`w-7 h-7 rounded-full transition-all ${active ? 'ring-2 ring-offset-1 ring-[var(--color-charcoal)] scale-110' : ''}`}
-                          aria-label={color}
-                        >
-                          {active && <span className="flex items-center justify-center w-full h-full">
-                            <span style={{width:7,height:7,borderRadius:'50%',background:light?'#333':'#fff',display:'block'}} />
-                          </span>}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {currentColor && <p className="text-xs text-[var(--color-stone)] mt-2 capitalize">{currentColor}</p>}
+                <div className="border-b border-[var(--color-border)] py-4">
+                  <SectionHeader label="Color" open={open.colores} onToggle={() => toggle('colores')} active={!!currentColor} />
+                  {open.colores && (
+                    <div className="mt-3">
+                      <div className="flex flex-wrap gap-2">
+                        {availableColors.map(color => {
+                          const hex = getHex(color)
+                          const light = isLight(hex)
+                          const active = currentColor === color
+                          return (
+                            <button key={color} title={color}
+                              onClick={() => go(buildUrl({color: active ? undefined : color}))}
+                              style={{backgroundColor: hex}}
+                              className={`w-7 h-7 rounded-full transition-all ${active ? 'ring-2 ring-offset-1 ring-[var(--color-charcoal)] scale-110' : ''}`}
+                              aria-label={color}
+                            >
+                              {active && <span className="flex items-center justify-center w-full h-full">
+                                <span style={{width:7,height:7,borderRadius:'50%',background:light?'#333':'#fff',display:'block'}} />
+                              </span>}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {currentColor && <p className="text-xs text-[var(--color-stone)] mt-2 capitalize">{currentColor}</p>}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Talles */}
               {availableSizes.length > 0 && (
-                <div>
-                  <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Talle</p>
-                  <div className="flex flex-wrap gap-2">
-                    {availableSizes.map(size => {
-                      const active = currentTalle?.toUpperCase() === size.toUpperCase()
-                      return (
-                        <button key={size}
-                          onClick={() => go(buildUrl({ talle: active ? undefined : size }))}
-                          className={`h-8 px-3 text-xs border transition-colors rounded-sm ${
-                            active
-                              ? 'border-[var(--color-charcoal)] bg-[var(--color-charcoal)] text-white'
-                              : 'border-[var(--color-border)] text-[var(--color-charcoal)]'
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      )
-                    })}
-                  </div>
+                <div className="border-b border-[var(--color-border)] py-4">
+                  <SectionHeader label="Talle" open={open.talles} onToggle={() => toggle('talles')} active={!!currentTalle} />
+                  {open.talles && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {availableSizes.map(size => {
+                        const active = currentTalle?.toUpperCase() === size.toUpperCase()
+                        return (
+                          <button key={size}
+                            onClick={() => go(buildUrl({ talle: active ? undefined : size }))}
+                            className={`h-8 px-3 text-xs border transition-colors rounded-sm ${
+                              active
+                                ? 'border-[var(--color-charcoal)] bg-[var(--color-charcoal)] text-white'
+                                : 'border-[var(--color-border)] text-[var(--color-charcoal)]'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Precio */}
-              <div>
-                <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Precio</p>
-                <form onSubmit={applyPrecio} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input type="number" min={0} value={precioMin} onChange={e=>setPrecioMin(e.target.value)} placeholder="Mín"
-                      className="w-full px-2 py-2 border border-[var(--color-border)] bg-white text-sm focus:outline-none" />
-                    <span className="text-[var(--color-stone)] text-xs flex-shrink-0">—</span>
-                    <input type="number" min={0} value={precioMax} onChange={e=>setPrecioMax(e.target.value)} placeholder="Máx"
-                      className="w-full px-2 py-2 border border-[var(--color-border)] bg-white text-sm focus:outline-none" />
-                  </div>
-                  <button type="submit"
-                    className="w-full py-2 border border-[var(--color-charcoal)] text-[10px] tracking-[0.15em] uppercase text-[var(--color-charcoal)]">
-                    Aplicar
-                  </button>
-                </form>
+              <div className="border-b border-[var(--color-border)] py-4">
+                <SectionHeader label="Precio" open={open.precio} onToggle={() => toggle('precio')} active={!!(currentPrecioMin || currentPrecioMax)} />
+                {open.precio && (
+                  <form onSubmit={applyPrecio} className="mt-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input type="number" min={0} value={precioMin} onChange={e=>setPrecioMin(e.target.value)} placeholder="Mín"
+                        className="w-full px-2 py-2 border border-[var(--color-border)] bg-white text-sm focus:outline-none" />
+                      <span className="text-[var(--color-stone)] text-xs flex-shrink-0">—</span>
+                      <input type="number" min={0} value={precioMax} onChange={e=>setPrecioMax(e.target.value)} placeholder="Máx"
+                        className="w-full px-2 py-2 border border-[var(--color-border)] bg-white text-sm focus:outline-none" />
+                    </div>
+                    <button type="submit"
+                      className="w-full py-2 border border-[var(--color-charcoal)] text-[10px] tracking-[0.15em] uppercase text-[var(--color-charcoal)]">
+                      Aplicar
+                    </button>
+                  </form>
+                )}
               </div>
 
               {/* Descuento */}
-              <div>
+              <div className="border-b border-[var(--color-border)] py-4">
                 <button onClick={() => go(buildUrl({descuento: currentDescuento ? undefined : '1'}))}
                   className={`flex items-center gap-2 text-sm font-light transition-colors ${currentDescuento ? 'text-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
                   <span className={`w-4 h-4 border flex items-center justify-center flex-shrink-0 ${currentDescuento ? 'border-[var(--color-charcoal)] bg-[var(--color-charcoal)]' : 'border-[var(--color-border)]'}`}>
@@ -228,21 +259,24 @@ export default function MobileFilterDrawer({
               </div>
 
               {/* Ordenar */}
-              <div>
-                <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--color-stone)] mb-3">Ordenar</p>
-                <ul className="space-y-2">
-                  {[{value:'',label:'Más recientes'},{value:'precio-asc',label:'Precio: menor a mayor'},
-                    {value:'precio-desc',label:'Precio: mayor a menor'},{value:'nombre-asc',label:'Nombre A→Z'}]
-                    .map(opt => (
-                    <li key={opt.value}>
-                      <button onClick={() => go(buildUrl({orden:opt.value||undefined}))}
-                        className={`text-sm font-light transition-colors ${(currentOrden??'')===opt.value ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
-                        {opt.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              <div className="py-4">
+                <SectionHeader label="Ordenar" open={open.ordenar} onToggle={() => toggle('ordenar')} active={!!currentOrden} />
+                {open.ordenar && (
+                  <ul className="mt-3 space-y-2">
+                    {[{value:'',label:'Más recientes'},{value:'precio-asc',label:'Precio: menor a mayor'},
+                      {value:'precio-desc',label:'Precio: mayor a menor'},{value:'nombre-asc',label:'Nombre A→Z'}]
+                      .map(opt => (
+                      <li key={opt.value}>
+                        <button onClick={() => go(buildUrl({orden:opt.value||undefined}))}
+                          className={`text-sm font-light transition-colors ${(currentOrden??'')===opt.value ? 'text-[var(--color-charcoal)] border-b border-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
+                          {opt.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
+
             </div>
 
             {/* Footer — limpiar */}
