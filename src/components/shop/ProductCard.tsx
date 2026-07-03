@@ -15,6 +15,7 @@ interface ProductCardProps {
   showWholesale?: boolean
   showPrices?: boolean
   priceVisibility?: 'all' | 'logged_in' | 'wholesale_only'
+  isRetailUser?: boolean
   index?: number
   colors?: string[]
   sizes?: string[]
@@ -49,7 +50,7 @@ function isLight(hex: string): boolean {
 
 export default function ProductCard({
   id, name, slug, coverUrl, retailPrice, retailCompareAt, wholesalePrice,
-  showWholesale = false, showPrices = true, priceVisibility = 'all', index = 0, colors = [], sizes = []
+  showWholesale = false, showPrices = true, priceVisibility = 'all', isRetailUser = false, index = 0, colors = [], sizes = []
 }: ProductCardProps) {
 
   // Props pre-procesadas desde tienda/page.tsx:
@@ -125,13 +126,17 @@ export default function ProductCard({
                 </span>
               ) : null}
             </>
+          ) : isRetailUser ? (
+            <span className="text-xs text-[var(--color-stone)]">
+              Solo para cuentas mayoristas
+            </span>
           ) : (
             <a
               href="/cuenta/login"
               onClick={e => e.stopPropagation()}
               className="text-xs text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors underline"
             >
-              {priceVisibility === 'wholesale_only' ? 'Solo para mayoristas' : 'Iniciá sesión para ver precio'}
+              {priceVisibility === 'wholesale_only' ? 'Iniciá sesión para ver precio' : 'Iniciá sesión para ver precio'}
             </a>
           )}
         </div>

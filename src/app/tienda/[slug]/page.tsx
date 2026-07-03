@@ -84,40 +84,48 @@ export default async function ProductoPage({ params }: Props) {
   const storeName = tenant?.name ?? 'TIENDA'
 
   const priceVisibility = (config as any)?.price_visibility ?? 'all'
-  let showPrices = priceVisibility === 'all'
-  let isWholesaleUser = false
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const service = createServiceSupabase()
-      // Admin ve todo
-      const { data: adminRows } = await service.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).limit(1)
-      if (adminRows && adminRows.length > 0) {
-        showPrices = true
-        isWholesaleUser = true
-      } else {
-        // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
-        const { data: customer } = await service
-          .from('customers')
-          .select('type')
-          .eq('email', user.email ?? '')
-          .eq('tenant_id', TENANT_ID())
-          .maybeSingle()
-        const isWholesale = customer?.type === 'wholesale'
-        const isRegistered = !!customer
-        if (priceVisibility === 'all') {
-          // Todos ven precios retail; mayoristas además ven precios mayoristas
-          isWholesaleUser = isWholesale
-        } else if (priceVisibility === 'logged_in') {
-          showPrices = isRegistered
-          isWholesaleUser = isWholesale
-        } else if (priceVisibility === 'wholesale_only') {
-          showPrices = isWholesale
-          isWholesaleUser = isWholesale
+  let showPrices = false
+  let isWholesaleUser = false  // controla si se muestra el precio mayorista
+  let isRetailUser = false     // logueado como retail en modo wholesale_only
+
+  if (priceVisibility === 'all') {
+    // Todos ven ambos precios sin importar si están logueados
+    showPrices = true
+    isWholesaleUser = true
+  } else {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const service = createServiceSupabase()
+        // Admin ve todo
+        const { data: adminRows } = await service.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).limit(1)
+        if (adminRows && adminRows.length > 0) {
+          showPrices = true
+          isWholesaleUser = true
+        } else {
+          // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
+          const { data: customer } = await service
+            .from('customers')
+            .select('type')
+            .eq('email', user.email ?? '')
+            .eq('tenant_id', TENANT_ID())
+            .maybeSingle()
+          const isWholesale = customer?.type === 'wholesale'
+          const isRegistered = !!customer
+          if (priceVisibility === 'logged_in') {
+            // Cualquier registrado (retail o wholesale) ve ambos precios
+            showPrices = isRegistered
+            isWholesaleUser = isRegistered
+          } else if (priceVisibility === 'wholesale_only') {
+            // Solo mayoristas ven precios; retail logueado ve mensaje diferente
+            showPrices = isWholesale
+            isWholesaleUser = isWholesale
+            isRetailUser = isRegistered && !isWholesale
+          }
         }
       }
-    }
-  } catch { /* si no hay sesión, mantener defaults */ }
+    } catch { /* si no hay sesión, mantener defaults */ }
+  }
 
   const sizes = [...new Set((product.variants ?? []).map((v: any) => v.size).filter(Boolean))]
   const colors = [...new Set((product.variants ?? []).map((v: any) => v.color).filter(Boolean))]
@@ -193,6 +201,10 @@ export default async function ProductoPage({ params }: Props) {
                       </p>
                     )}
                   </>
+                ) : isRetailUser ? (
+                  <p className="text-sm text-[var(--color-stone)]">
+                    Necesitás una cuenta mayorista para ver el precio
+                  </p>
                 ) : (
                   <a
                     href="/cuenta/login"
@@ -200,7 +212,7 @@ export default async function ProductoPage({ params }: Props) {
                   >
                     {priceVisibility === 'wholesale_only'
                       ? 'Precio disponible solo para mayoristas'
-                      : 'Inicia sesion para ver el precio'}
+                      : 'Iniciá sesión para ver el precio'}
                   </a>
                 )}
               </div>

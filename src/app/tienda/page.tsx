@@ -199,35 +199,43 @@ export default async function TiendaPage({ searchParams }: Props) {
   const storeName = tenant?.name ?? 'TIENDA'
   const priceVisibility = (config as any)?.price_visibility ?? 'all'
 
-  let showPrices = priceVisibility === 'all'
+  let showPrices = false
   let showWholesale = false
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const service = createServiceSupabase()
-      // Admin ve todo (usar service para bypasear RLS en users también)
-      const { data: adminUser } = await service.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).limit(1)
-      if (adminUser && adminUser.length > 0) {
-        showPrices = true
-        showWholesale = true
-      } else {
-        // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
-        const { data: cust } = await service.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
-        const isWholesale = cust?.type === 'wholesale'
-        const isRegistered = !!cust
-        if (priceVisibility === 'all') {
-          // Todos ven precios retail; mayoristas además ven precios mayoristas
-          showWholesale = isWholesale
-        } else if (priceVisibility === 'logged_in') {
-          showPrices = isRegistered
-          showWholesale = isWholesale
-        } else if (priceVisibility === 'wholesale_only') {
-          showPrices = isWholesale
-          showWholesale = isWholesale
+  let isRetailUser = false  // logueado como retail en modo wholesale_only
+
+  if (priceVisibility === 'all') {
+    // Todos ven ambos precios (retail y mayorista) sin importar si están logueados
+    showPrices = true
+    showWholesale = true
+  } else {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const service = createServiceSupabase()
+        // Admin ve todo
+        const { data: adminUser } = await service.from('users').select('id').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).limit(1)
+        if (adminUser && adminUser.length > 0) {
+          showPrices = true
+          showWholesale = true
+        } else {
+          // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
+          const { data: cust } = await service.from('customers').select('type').eq('email', user.email ?? '').eq('tenant_id', TENANT_ID()).maybeSingle()
+          const isWholesale = cust?.type === 'wholesale'
+          const isRegistered = !!cust
+          if (priceVisibility === 'logged_in') {
+            // Cualquier usuario registrado (retail o wholesale) ve ambos precios
+            showPrices = isRegistered
+            showWholesale = isRegistered
+          } else if (priceVisibility === 'wholesale_only') {
+            // Solo mayoristas ven precios; retail logueado ve mensaje diferente
+            showPrices = isWholesale
+            showWholesale = isWholesale
+            isRetailUser = isRegistered && !isWholesale
+          }
         }
       }
-    }
-  } catch { /* si no hay sesión, mantener defaults */ }
+    } catch { /* si no hay sesión, mantener defaults */ }
+  }
 
   return (
     <>
@@ -300,6 +308,7 @@ export default async function TiendaPage({ searchParams }: Props) {
                     showPrices={showPrices}
                     showWholesale={showWholesale}
                     priceVisibility={priceVisibility}
+                    isRetailUser={isRetailUser}
                     colors={product.colors}
                     sizes={product.sizes}
                     index={i}
