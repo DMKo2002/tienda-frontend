@@ -10,6 +10,7 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
+  transpilePackages: ['@creart/tienda-core'],
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
