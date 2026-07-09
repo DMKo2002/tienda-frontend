@@ -202,4 +202,34 @@ export default function CarritoPage() {
                     >
                       Finalizar compra
                     </Link>
-                  ) 
+                  ) : (
+                    <div>
+                      <div className="w-full py-4 bg-[var(--color-border)] text-[var(--color-stone)] text-xs tracking-[0.2em] uppercase text-center cursor-not-allowed">
+                        Finalizar compra
+                      </div>
+                      {hasMin && !meetsMin && (
+                        <p className="text-[10px] text-[var(--color-stone)] text-center mt-2">
+                          Mínimo de compra: {formatPrice(minOrder!)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <Link
+                    href="/tienda"
+                    className="block w-full py-3 text-center text-xs tracking-[0.15em] uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors mt-3"
+                  >
+                    Seguir comprando
+                  </Link>
+                </div>
+              </div>
+
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </>
+  )
+}
