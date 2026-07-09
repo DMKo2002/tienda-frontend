@@ -72,7 +72,7 @@ export default async function CuentaPage() {
 
   return (
     <>
-      <Navbar storeName={storeName} logoUrl={config?.logo_url} />
+      <Navbar storeName={storeName} logoUrl={config?.logo_url} tourUrl={(config as any)?.video_360_url} />
       <main className="pt-28 min-h-screen bg-[var(--color-bg)]">
         <div className="max-w-3xl mx-auto px-6 py-10">
 

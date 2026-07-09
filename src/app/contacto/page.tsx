@@ -35,6 +35,7 @@ export default function ContactPage() {
   const [instagram, setInstagram] = useState('')
   const [facebook, setFacebook] = useState('')
   const [branches, setBranches] = useState<Branch[]>([])
+  const [tourUrl, setTourUrl] = useState<string | null>(null)
   const [newsletter, setNewsletter] = useState('')
   const [sent, setSent] = useState(false)
 
@@ -43,7 +44,7 @@ export default function ContactPage() {
       const [{ data: tenant }, { data: config }] = await Promise.all([
         supabase.from('tenants').select('name').eq('id', TENANT_ID()).single(),
         supabase.from('store_config')
-          .select('logo_url, whatsapp_number, notification_email, instagram_url, facebook_url, branches')
+          .select('logo_url, whatsapp_number, notification_email, instagram_url, facebook_url, branches, video_360_url')
           .eq('tenant_id', TENANT_ID()).single(),
       ])
       setStoreName(tenant?.name ?? 'TIENDA')
@@ -53,6 +54,7 @@ export default function ContactPage() {
       setInstagram((config as any)?.instagram_url ?? '')
       setFacebook((config as any)?.facebook_url ?? '')
       setBranches((config as any)?.branches ?? [])
+      setTourUrl((config as any)?.video_360_url ?? null)
     }
     load()
   }, [])
@@ -62,7 +64,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <Navbar storeName={storeName} logoUrl={logoUrl} />
+      <Navbar storeName={storeName} logoUrl={logoUrl} tourUrl={tourUrl} />
 
       <main className="pt-28 pb-0 min-h-screen bg-white">
 

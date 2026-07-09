@@ -17,7 +17,7 @@ export default async function PrivacyPage() {
 
   return (
     <>
-      <Navbar storeName={storeName} logoUrl={config?.logo_url} />
+      <Navbar storeName={storeName} logoUrl={config?.logo_url} tourUrl={(config as any)?.video_360_url} />
       <main className="pt-32 min-h-screen">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-24 overflow-x-hidden">
           <h1 className="font-display text-4xl font-light text-[var(--color-charcoal)] mb-10">
