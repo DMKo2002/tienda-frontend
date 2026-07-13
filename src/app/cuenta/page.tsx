@@ -48,7 +48,7 @@ export default async function CuentaPage() {
   // Buscar customer: primero por auth user id, luego por email (cubre customers importados)
   let customer: any = null
   const { data: custById } = await service
-    .from('customers').select('*').eq('id', user!.id).eq('tenant_id', TENANT_ID()).maybeSingle()
+    .from('customers').select('*').eq('auth_user_id', user!.id).eq('tenant_id', TENANT_ID()).maybeSingle()
   if (custById) {
     customer = custById
   } else {
