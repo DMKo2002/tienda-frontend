@@ -104,11 +104,13 @@ export default async function ProductoPage({ params }: Props) {
           showPrices = true
           isWholesaleUser = true
         } else {
-          // Service client bypasea RLS — necesario para customers importados (id ≠ auth.uid)
+          // Service client bypasea RLS. Usar auth_user_id (no email): el mail de
+          // Auth puede ser "disfrazado" por tienda (ver lib/auth-email.ts) y ya
+          // no coincide con customers.email para cuentas nuevas.
           const { data: customer } = await service
             .from('customers')
             .select('type')
-            .eq('email', user.email ?? '')
+            .eq('auth_user_id', user.id)
             .eq('tenant_id', TENANT_ID())
             .maybeSingle()
           const isWholesale = customer?.type === 'wholesale'
