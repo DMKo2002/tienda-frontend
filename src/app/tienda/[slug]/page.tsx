@@ -63,7 +63,7 @@ export default async function ProductoPage({ params }: Props) {
   const { data: tenant } = await supabase.from('tenants').select('name').eq('id', TENANT_ID()).single()
   const { data: config } = await supabase
     .from('store_config')
-    .select('logo_url, whatsapp_number, notification_email, price_visibility, ignore_stock, video_360_url')
+    .select('logo_url, whatsapp_number, notification_email, price_visibility, ignore_stock, video_360_url, min_qty_per_variant')
     .eq('tenant_id', TENANT_ID())
     .single()
 
@@ -186,7 +186,7 @@ export default async function ProductoPage({ params }: Props) {
               <div className="mb-8">
                 {showPrices ? (
                   <>
-                    {retailRule && (
+                    {retailPrice ? (
                       <div>
                         <p className="text-2xl font-light text-[var(--color-charcoal)]">
                           {formatPrice(retailPrice!)}
@@ -197,7 +197,11 @@ export default async function ProductoPage({ params }: Props) {
                           </p>
                         )}
                       </div>
-                    )}
+                    ) : !(isWholesaleUser && wholesaleRule) ? (
+                      <p className="text-sm text-[var(--color-stone)]">
+                        Producto solo por mayor
+                      </p>
+                    ) : null}
                     {isWholesaleUser && wholesaleRule && (
                       <p className="text-sm text-[var(--color-stone)] mt-1">
                         Precio mayorista: {formatPrice(wholesaleRule.price)}
@@ -234,6 +238,7 @@ export default async function ProductoPage({ params }: Props) {
                 showPrices={showPrices}
                 isWholesale={isWholesaleUser}
                 ignoreStock={Boolean((config as any)?.ignore_stock)}
+                minQty={(product as any).min_qty ?? (config as any)?.min_qty_per_variant ?? 1}
               />
 
               <div className="w-full h-px bg-[var(--color-border)] my-8" />
