@@ -155,9 +155,15 @@ function RegistroForm() {
                 : <>Tu cuenta fue creada. Recibiste un email de bienvenida en <strong>{form.email}</strong>. Ya podés iniciar sesión.</>
             }
           </p>
-          <Link href={isUpgrade ? '/cuenta' : '/cuenta/login'} className="text-sm text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
-            {isUpgrade ? 'Ir a mi cuenta' : 'Ir al inicio de sesion'}
-          </Link>
+          {isUpgrade ? (
+            <a href="/cuenta" className="text-sm text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
+              Ir a mi cuenta
+            </a>
+          ) : (
+            <Link href="/cuenta/login" className="text-sm text-[var(--color-charcoal)] underline hover:text-[var(--color-stone)] transition-colors">
+              Ir al inicio de sesion
+            </Link>
+          )}
         </div>
       </div>
     )
