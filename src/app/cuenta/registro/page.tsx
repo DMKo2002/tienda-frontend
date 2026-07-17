@@ -98,7 +98,7 @@ function RegistroForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (form.password !== form.confirmar) { setError('Las contrasenas no coinciden'); return }
+    if (!isUpgrade && form.password !== form.confirmar) { setError('Las contrasenas no coinciden'); return }
     if (tipo === 'wholesale') {
       if (!form.empresa || !form.cuit) { setError('Empresa y CUIT son obligatorios'); return }
       if (!form.provincia || !form.localidad) { setError('Provincia y localidad son obligatorias'); return }
@@ -113,7 +113,7 @@ function RegistroForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre: form.nombre, apellido: form.apellido, email: form.email,
-          password: form.password, tipo,
+          password: isUpgrade ? undefined : form.password, tipo,
           empresa: form.empresa || undefined, cuit: form.cuit || undefined,
           direccion: form.direccion || undefined, provincia: form.provincia || undefined,
           localidad: form.localidad || undefined, turnstileToken,
@@ -264,31 +264,40 @@ function RegistroForm() {
               readOnly={isUpgrade} disabled={isUpgrade} />
           </div>
 
-          <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Contrasena *</label>
-            <div className="relative">
-              <input type={showPassword ? 'text' : 'password'}
-                className="w-full px-3 py-2.5 pr-10 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Minimo 8 caracteres" />
-              <button type="button" onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
-                <EyeIcon open={showPassword} />
-              </button>
-            </div>
-          </div>
+          {/* El upgrade a mayorista usa la sesión ya iniciada para confirmar
+              identidad — no hace falta (ni tiene sentido) pedir contraseña acá.
+              Pedirla sin aclarar que debía ser la ACTUAL era justo lo que
+              rompía el upgrade: la mayoría escribía una nueva y el tipo de
+              cuenta nunca se actualizaba a mayorista. */}
+          {!isUpgrade && (
+            <>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Contrasena *</label>
+                <div className="relative">
+                  <input type={showPassword ? 'text' : 'password'}
+                    className="w-full px-3 py-2.5 pr-10 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                    value={form.password} onChange={e => set('password', e.target.value)} required minLength={8} placeholder="Minimo 8 caracteres" />
+                  <button type="button" onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
+                    <EyeIcon open={showPassword} />
+                  </button>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Confirmar Contrasena *</label>
-            <div className="relative">
-              <input type={showConfirmar ? 'text' : 'password'}
-                className="w-full px-3 py-2.5 pr-10 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
-                value={form.confirmar} onChange={e => set('confirmar', e.target.value)} required minLength={8} />
-              <button type="button" onClick={() => setShowConfirmar(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
-                <EyeIcon open={showConfirmar} />
-              </button>
-            </div>
-          </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--color-stone)] mb-1.5">Confirmar Contrasena *</label>
+                <div className="relative">
+                  <input type={showConfirmar ? 'text' : 'password'}
+                    className="w-full px-3 py-2.5 pr-10 border border-[var(--color-border)] bg-white text-sm focus:outline-none focus:border-[var(--color-charcoal)] transition-colors"
+                    value={form.confirmar} onChange={e => set('confirmar', e.target.value)} required minLength={8} />
+                  <button type="button" onClick={() => setShowConfirmar(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">
+                    <EyeIcon open={showConfirmar} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="flex justify-center py-2">
             <Turnstile
