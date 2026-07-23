@@ -60,7 +60,7 @@ export default async function HomePage() {
 
         {/* ── HERO ─────────────────────────────────────────────── */}
         <section
-          className="relative min-h-screen flex items-end pb-20 overflow-hidden bg-[#EDE8E1]"
+          className="relative min-h-screen flex items-end pb-20 overflow-hidden bg-[#E3E0DA]"
           style={config?.hero_image_url ? {
             backgroundImage: `url(${config.hero_image_url})`,
             backgroundSize: 'cover',
