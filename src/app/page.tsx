@@ -188,7 +188,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── BANNER INTERMEDIO ────────────────────────────────── */}
-        <section className="bg-[var(--color-charcoal)] py-24 px-6">
+        <section className="bg-[#A4A49C] py-24 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-xs tracking-[0.3em] uppercase text-white/40 mb-6">Los Destacados</p>
             <h2 className="font-display text-5xl md:text-6xl font-light italic text-white leading-tight mb-8">
@@ -214,7 +214,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {['#DDD5C8', '#C8CDD5', '#C8D5CC', '#D5C8CE'].map((bg, i) => {
+            {['#E3E0DA', '#CECCC5', '#B9B8B1', '#A4A49C'].map((bg, i) => {
               const imgUrl = asset(`moodboard_${i + 1}`)
               return (
                 <div

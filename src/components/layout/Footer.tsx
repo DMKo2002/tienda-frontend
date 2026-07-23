@@ -64,7 +64,7 @@ export default function Footer({
   const hasBranches = branches && branches.length > 0
 
   return (
-    <footer className="bg-[var(--color-charcoal)] text-white/70 mt-24">
+    <footer className="bg-[#A4A49C] text-white/70 mt-24">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
 
