@@ -61,15 +61,16 @@ export default function Navbar({ storeName = 'TIENDA', logoUrl, tourUrl }: Navba
               Home
             </Link>
 
-            {/* Tienda trigger */}
-            <div onMouseEnter={open} onMouseLeave={close}>
-              <Link
-                href="/tienda"
-                className={`text-xs tracking-[0.15em] uppercase transition-colors ${megaOpen ? 'text-[var(--color-stone)]' : 'text-[var(--color-charcoal)] hover:text-[var(--color-stone)]'}`}
-              >
-                Tienda
-              </Link>
-            </div>
+            {/* Tienda trigger — sin div envolvente: si no, queda una caja de línea
+                distinta a la de los demás links y "Tienda" se ve corrido hacia abajo */}
+            <Link
+              href="/tienda"
+              onMouseEnter={open}
+              onMouseLeave={close}
+              className={`text-xs tracking-[0.15em] uppercase transition-colors ${megaOpen ? 'text-[var(--color-stone)]' : 'text-[var(--color-charcoal)] hover:text-[var(--color-stone)]'}`}
+            >
+              Tienda
+            </Link>
 
             {tourUrl && (
               <Link href="/tour" className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] hover:text-[var(--color-stone)] transition-colors">
