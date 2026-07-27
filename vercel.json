@@ -1,4 +1,4 @@
 {
-  "installCommand": "echo \"HOME=$HOME\" && echo \"GH_TOKEN length: ${#GH_TOKEN}\" && git config --global url.\"https://${GH_TOKEN}@github.com/\".insteadOf \"ssh://git@github.com/\" && git config --global url.\"https://${GH_TOKEN}@github.com/\".insteadOf \"git@github.com:\" && echo \"--- gitconfig contents ---\" && cat ~/.gitconfig && echo \"--------------------------\" && rm -rf node_modules/@creart/tienda-core && npm install",
+  "installCommand": "echo H=$HOME L=${#GH_TOKEN} && git config --global url.\"https://${GH_TOKEN}@github.com/\".insteadOf \"ssh://git@github.com/\" && cat ~/.gitconfig && rm -rf node_modules/@creart/tienda-core && npm install",
   "buildCommand": "rm -rf .next/cache && next build"
 }
