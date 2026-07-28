@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { ShoppingBag, Menu, X, Search, User } from 'lucide-react'
 import { useCart } from '@/components/shop/CartContext'
@@ -86,7 +87,9 @@ export default function Navbar({ storeName = 'TIENDA', logoUrl, tourUrl }: Navba
           {/* Logo centrado */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2">
             {logoUrl ? (
-              <img src={logoUrl} alt={storeName} className="h-8 max-w-[160px] object-contain" />
+              <span className="relative block h-8 w-[160px]">
+                <Image src={logoUrl} alt={storeName} fill sizes="160px" className="object-contain" priority />
+              </span>
             ) : (
               <span className="font-display text-xl font-light tracking-[0.2em] uppercase text-[var(--color-charcoal)]">
                 {storeName}
