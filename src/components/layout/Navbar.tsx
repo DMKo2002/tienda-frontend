@@ -117,6 +117,9 @@ export default function Navbar({ storeName = 'TIENDA', logoUrl, tourUrl }: Navba
 
           {/* Mobile hamburger */}
           <div className="md:hidden flex items-center gap-4 ml-auto">
+            <Link href="/cuenta" title="Mi cuenta">
+              <User size={20} strokeWidth={1.5} />
+            </Link>
             <Link href="/carrito" className="relative">
               <ShoppingBag size={20} strokeWidth={1.5} />
               {count > 0 && (
