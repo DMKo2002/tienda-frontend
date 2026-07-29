@@ -66,7 +66,7 @@ export default async function ProductoPage({ params }: Props) {
   const { data: tenant } = await supabase.from('tenants').select('name').eq('id', TENANT_ID()).single()
   const { data: config } = await supabase
     .from('store_config')
-    .select('logo_url, whatsapp_number, notification_email, price_visibility, ignore_stock, video_360_url, min_qty_per_variant, interest_free_installments')
+    .select('logo_url, whatsapp_number, notification_email, price_visibility, ignore_stock, video_360_url, min_qty_per_variant, interest_free_installments, variant_column_type, variant_row_label, variant_column_label')
     .eq('tenant_id', TENANT_ID())
     .single()
 
@@ -253,6 +253,9 @@ export default async function ProductoPage({ params }: Props) {
                 ignoreStock={Boolean((config as any)?.ignore_stock)}
                 interestFreeInstallments={(config as any)?.interest_free_installments ?? null}
                 minQty={(product as any).min_qty ?? (config as any)?.min_qty_per_variant ?? 1}
+                columnType={(config as any)?.variant_column_type === 'text' ? 'text' : 'color'}
+                rowLabel={(config as any)?.variant_row_label ?? ''}
+                columnLabel={(config as any)?.variant_column_label ?? ''}
               />
 
               <div className="w-full h-px bg-[var(--color-border)] my-8" />
