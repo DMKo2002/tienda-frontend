@@ -21,6 +21,14 @@ export default async function HomePage() {
   // Datos de la tienda
   const { tenant, config } = await getStoreData(supabase, TENANT_ID())
 
+  // Apariencia de ESTA plantilla (hero): propia de Minimalista, no vive en
+  // tienda-core — así cada template queda intercambiable a futuro.
+  const { data: appearance } = await supabase
+    .from('store_config')
+    .select('hero_image_url, hero_text_color, hero_eyebrow, hero_title_line1, hero_title_italic, hero_title_line3, hero_season')
+    .eq('tenant_id', TENANT_ID())
+    .single()
+
   // Imágenes configurables desde panel Personalización
   const { data: assetsRows } = await supabase
     .from('store_assets')
@@ -52,24 +60,24 @@ export default async function HomePage() {
         {/* ── HERO ─────────────────────────────────────────────── */}
         <section
           className="relative min-h-screen flex items-end pb-20 overflow-hidden bg-[#E3E0DA]"
-          style={config?.hero_image_url ? {
-            backgroundImage: `url(${config.hero_image_url})`,
+          style={(appearance as any)?.hero_image_url ? {
+            backgroundImage: `url(${(appearance as any).hero_image_url})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           } : undefined}
         >
           {/* Overlay oscuro cuando hay imagen */}
-          {config?.hero_image_url && (
+          {(appearance as any)?.hero_image_url && (
             <div className="absolute inset-0 bg-black/40" />
           )}
 
           {/* Texto hero */}
           {(() => {
-            const customColor = (config as any)?.hero_text_color
+            const customColor = (appearance as any)?.hero_text_color
             const textStyle = customColor ? { color: customColor } : undefined
-            const defaultEyebrowClass = config?.hero_image_url ? 'text-white/70' : 'text-[var(--color-stone)]'
-            const defaultTitleClass   = config?.hero_image_url ? 'text-white'    : 'text-[var(--color-charcoal)]'
-            const defaultLinkClass    = config?.hero_image_url
+            const defaultEyebrowClass = (appearance as any)?.hero_image_url ? 'text-white/70' : 'text-[var(--color-stone)]'
+            const defaultTitleClass   = (appearance as any)?.hero_image_url ? 'text-white'    : 'text-[var(--color-charcoal)]'
+            const defaultLinkClass    = (appearance as any)?.hero_image_url
               ? 'border-white/70 text-white hover:border-white hover:text-white/80'
               : 'border-[var(--color-charcoal)] text-[var(--color-charcoal)] hover:text-[var(--color-stone)] hover:border-[var(--color-stone)]'
             return (
@@ -79,15 +87,15 @@ export default async function HomePage() {
                     className={`text-xs tracking-[0.25em] uppercase mb-4 ${!customColor ? defaultEyebrowClass : ''}`}
                     style={textStyle ? { color: customColor + 'B3' } : undefined}
                   >
-                    {(config as any)?.hero_eyebrow ?? 'Nueva temporada'}
+                    {(appearance as any)?.hero_eyebrow ?? 'Nueva temporada'}
                   </p>
                   <h1
                     className={`font-display text-6xl md:text-8xl font-light leading-none mb-8 ${!customColor ? defaultTitleClass : ''}`}
                     style={textStyle}
                   >
-                    {(config as any)?.hero_title_line1 ?? 'Estilo que'}<br />
-                    <em className="italic">{(config as any)?.hero_title_italic ?? 'trasciende'}</em><br />
-                    {(config as any)?.hero_title_line3 ?? 'tendencia'}
+                    {(appearance as any)?.hero_title_line1 ?? 'Estilo que'}<br />
+                    <em className="italic">{(appearance as any)?.hero_title_italic ?? 'trasciende'}</em><br />
+                    {(appearance as any)?.hero_title_line3 ?? 'tendencia'}
                   </h1>
                   <Link
                     href="/tienda"
@@ -104,7 +112,7 @@ export default async function HomePage() {
           {/* Número decorativo */}
           <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-0 animate-fade-in delay-400 hidden lg:block">
             <p className="font-display text-[200px] font-light text-[var(--color-charcoal)]/5 leading-none select-none">
-              {(config as any)?.hero_season ?? 'AW'}
+              {(appearance as any)?.hero_season ?? 'AW'}
             </p>
           </div>
 
