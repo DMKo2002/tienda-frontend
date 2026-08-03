@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { createClient, TENANT_ID } from '@/lib/supabase'
+import { getStoreData } from '@creart/tienda-core/store-data'
 
 export default function TourPage() {
   const supabase = createClient()
@@ -17,12 +18,7 @@ export default function TourPage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: tenant }, { data: config }] = await Promise.all([
-        supabase.from('tenants').select('name').eq('id', TENANT_ID()).single(),
-        supabase.from('store_config')
-          .select('logo_url, video_360_url, whatsapp_number, notification_email, instagram_url, facebook_url')
-          .eq('tenant_id', TENANT_ID()).single(),
-      ])
+      const { tenant, config } = await getStoreData(supabase, TENANT_ID())
       if (tenant) setStoreName(tenant.name)
       if (config) {
         setLogoUrl(config.logo_url)

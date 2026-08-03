@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabase, TENANT_ID } from '@/lib/supabase-server'
+import { getStoreData } from '@creart/tienda-core/store-data'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import LogoutButton from '@/components/cuenta/LogoutButton'
@@ -40,10 +41,7 @@ export default async function CuentaPage() {
 
   const service = createServiceClient()
 
-  const [{ data: config }, { data: tenant }] = await Promise.all([
-    supabase.from('store_config').select('logo_url, whatsapp_number, notification_email').eq('tenant_id', TENANT_ID()).single(),
-    supabase.from('tenants').select('name').eq('id', TENANT_ID()).single(),
-  ])
+  const { tenant, config } = await getStoreData(supabase, TENANT_ID())
 
   // Buscar customer: primero por auth user id, luego por email (cubre customers importados)
   let customer: any = null
