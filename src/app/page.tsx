@@ -25,7 +25,7 @@ export default async function HomePage() {
   // tienda-core — así cada template queda intercambiable a futuro.
   const { data: appearance } = await supabase
     .from('store_config')
-    .select('hero_image_url, hero_text_color, hero_eyebrow, hero_title_line1, hero_title_italic, hero_title_line3, hero_season')
+    .select('hero_image_url, hero_text_color, hero_eyebrow, hero_title_line1, hero_title_italic, hero_title_line3, hero_season, banner_bg_color')
     .eq('tenant_id', TENANT_ID())
     .single()
 
@@ -187,7 +187,10 @@ export default async function HomePage() {
         </section>
 
         {/* ── BANNER INTERMEDIO ────────────────────────────────── */}
-        <section className="bg-[#A4A49C] py-24 px-6">
+        <section
+          className="py-24 px-6"
+          style={{ backgroundColor: (appearance as any)?.banner_bg_color || '#A4A49C' }}
+        >
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-xs tracking-[0.3em] uppercase text-white/40 mb-6">Los Destacados</p>
             <h2 className="font-display text-5xl md:text-6xl font-light italic text-white leading-tight mb-8">
