@@ -23,11 +23,16 @@ export default async function HomePage() {
 
   // Apariencia de ESTA plantilla (hero): propia de Minimalista, no vive en
   // tienda-core — así cada template queda intercambiable a futuro.
-  const { data: appearance } = await supabase
+  // .limit(1) en vez de .single(): no explota si hay 0 o 2+ filas.
+  const { data: appearanceRows, error: appearanceError } = await supabase
     .from('store_config')
     .select('hero_image_url, hero_text_color, hero_eyebrow, hero_title_line1, hero_title_italic, hero_title_line3, hero_season, banner_bg_color')
     .eq('tenant_id', TENANT_ID())
-    .single()
+    .limit(1)
+  if (appearanceError) {
+    console.error('[HomePage minimalista] appearance query failed:', appearanceError.message)
+  }
+  const appearance = appearanceRows?.[0] ?? null
 
   // Imágenes configurables desde panel Personalización
   const { data: assetsRows } = await supabase
