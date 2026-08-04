@@ -65,7 +65,7 @@ export default function Footer({
   const hasBranches = branches && branches.length > 0
 
   return (
-    <footer className="bg-[#A4A49C] text-white/70 mt-24">
+    <footer className="bg-white text-[var(--color-stone)] mt-24 border-t border-[var(--color-border)]">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
 
@@ -78,34 +78,34 @@ export default function Footer({
                   alt={storeName}
                   fill
                   sizes="160px"
-                  className="object-contain object-left brightness-0 invert"
+                  className="object-contain object-left"
                 />
               </span>
             ) : (
-              <p className="font-display text-2xl font-light tracking-[0.2em] uppercase text-white mb-4">
+              <p className="font-display text-2xl font-light tracking-[0.2em] uppercase text-[var(--color-charcoal)] mb-4">
                 {storeName}
               </p>
             )}
-            <p className="text-xs leading-relaxed text-white/50 mb-5">Estilo que trasciende tendencia.</p>
+            <p className="text-xs leading-relaxed mb-5">Estilo que trasciende tendencia.</p>
             {hasSocial && (
               <div className="flex items-center gap-3">
                 {instagramUrl && (
-                  <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="Instagram">
+                  <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-charcoal)] transition-colors" aria-label="Instagram">
                     <IconInstagram />
                   </a>
                 )}
                 {facebookUrl && (
-                  <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="Facebook">
+                  <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-charcoal)] transition-colors" aria-label="Facebook">
                     <IconFacebook />
                   </a>
                 )}
                 {tiktokUrl && (
-                  <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="TikTok">
+                  <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-charcoal)] transition-colors" aria-label="TikTok">
                     <IconTikTok />
                   </a>
                 )}
                 {whatsapp && (
-                  <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" aria-label="WhatsApp">
+                  <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-charcoal)] transition-colors" aria-label="WhatsApp">
                     <IconWhatsApp />
                   </a>
                 )}
@@ -115,9 +115,9 @@ export default function Footer({
 
           {/* Links tienda */}
           <div>
-            <p className="text-xs tracking-[0.15em] uppercase text-white mb-5">Tienda</p>
+            <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] mb-5">Tienda</p>
             <ul className="space-y-3">
-              <li><Link href="/tienda" className="text-xs text-white/50 hover:text-white transition-colors">Todos los productos</Link></li>
+              <li><Link href="/tienda" className="text-xs hover:text-[var(--color-charcoal)] transition-colors">Todos los productos</Link></li>
             </ul>
           </div>
 
@@ -125,11 +125,11 @@ export default function Footer({
           <div>
             {hasBranches ? (
               <>
-                <p className="text-xs tracking-[0.15em] uppercase text-white mb-5">Sucursales</p>
+                <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] mb-5">Sucursales</p>
                 <ul className="space-y-4">
                   {branches.map((b, i) => (
-                    <li key={i} className="text-xs text-white/50 leading-relaxed">
-                      {b.name && <p className="text-white/70 font-medium mb-0.5">{b.name}</p>}
+                    <li key={i} className="text-xs leading-relaxed">
+                      {b.name && <p className="text-[var(--color-charcoal)] font-medium mb-0.5">{b.name}</p>}
                       {b.address && <p>{b.address}</p>}
                       {b.phone && <p>{b.phone}</p>}
                     </li>
@@ -138,17 +138,17 @@ export default function Footer({
               </>
             ) : (
               <>
-                <p className="text-xs tracking-[0.15em] uppercase text-white mb-5">Contacto</p>
-                <ul className="space-y-3 text-xs text-white/50">
+                <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] mb-5">Contacto</p>
+                <ul className="space-y-3 text-xs">
                   {whatsapp && (
                     <li>
-                      <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} className="hover:text-white transition-colors">
+                      <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} className="hover:text-[var(--color-charcoal)] transition-colors">
                         WhatsApp: {whatsapp}
                       </a>
                     </li>
                   )}
                   {email && (
-                    <li><a href={`mailto:${email}`} className="hover:text-white transition-colors">{email}</a></li>
+                    <li><a href={`mailto:${email}`} className="hover:text-[var(--color-charcoal)] transition-colors">{email}</a></li>
                   )}
                 </ul>
               </>
@@ -157,26 +157,26 @@ export default function Footer({
 
           {/* Contacto */}
           <div>
-            <p className="text-xs tracking-[0.15em] uppercase text-white mb-5">Ayuda</p>
-            <ul className="space-y-3 text-xs text-white/50">
-              <li><Link href="/contacto" className="hover:text-white transition-colors">Contacto</Link></li>
+            <p className="text-xs tracking-[0.15em] uppercase text-[var(--color-charcoal)] mb-5">Ayuda</p>
+            <ul className="space-y-3 text-xs">
+              <li><Link href="/contacto" className="hover:text-[var(--color-charcoal)] transition-colors">Contacto</Link></li>
               {email && (
-                <li><a href={`mailto:${email}`} className="hover:text-white transition-colors">{email}</a></li>
+                <li><a href={`mailto:${email}`} className="hover:text-[var(--color-charcoal)] transition-colors">{email}</a></li>
               )}
             </ul>
           </div>
 
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col items-center gap-3 md:flex-row md:justify-between md:gap-4">
-          <p className="text-[10px] tracking-widest uppercase text-white/30">
+        <div className="mt-16 pt-8 border-t border-[var(--color-border)] flex flex-col items-center gap-3 md:flex-row md:justify-between md:gap-4">
+          <p className="text-[10px] tracking-widest uppercase text-[var(--color-stone)]">
             &copy; {new Date().getFullYear()} {storeName}
           </p>
           <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2">
-            <a href="/politica-privacidad" className="text-[10px] tracking-widest uppercase text-white/30 hover:text-white/60 transition-colors">Privacidad</a>
-            <a href="/politica-cookies" className="text-[10px] tracking-widest uppercase text-white/30 hover:text-white/60 transition-colors">Cookies</a>
-            <a href="/terminos-condiciones" className="text-[10px] tracking-widest uppercase text-white/30 hover:text-white/60 transition-colors">Términos</a>
-            <p className="text-[10px] tracking-widest uppercase text-white/30">Desarrollado por gounuri</p>
+            <a href="/politica-privacidad" className="text-[10px] tracking-widest uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">Privacidad</a>
+            <a href="/politica-cookies" className="text-[10px] tracking-widest uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">Cookies</a>
+            <a href="/terminos-condiciones" className="text-[10px] tracking-widest uppercase text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors">Términos</a>
+            <p className="text-[10px] tracking-widest uppercase text-[var(--color-stone)]">Desarrollado por gounuri</p>
           </div>
         </div>
       </div>
