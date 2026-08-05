@@ -51,7 +51,7 @@ export default function Navbar({ storeName = 'TIENDA', logoUrl, tourUrl }: Navba
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      <header className={`fixed top-[var(--announcement-h,0px)] left-0 right-0 z-50 transition-all duration-500 ${
         scrolled ? 'bg-[var(--color-warm-white)] border-b border-[var(--color-border)] py-3' : 'bg-transparent py-6'
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
