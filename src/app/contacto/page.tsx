@@ -36,6 +36,7 @@ export default function ContactPage() {
   const [instagram, setInstagram] = useState('')
   const [facebook, setFacebook] = useState('')
   const [branches, setBranches] = useState<Branch[]>([])
+  const [pickupAddress, setPickupAddress] = useState('')
   const [tourUrl, setTourUrl] = useState<string | null>(null)
   const [newsletter, setNewsletter] = useState('')
   const [sent, setSent] = useState(false)
@@ -50,6 +51,7 @@ export default function ContactPage() {
       setInstagram((config as any)?.instagram_url ?? '')
       setFacebook((config as any)?.facebook_url ?? '')
       setBranches((config as any)?.branches ?? [])
+      setPickupAddress((config as any)?.pickup_address ?? '')
       setTourUrl((config as any)?.video_360_url ?? null)
     }
     load()
@@ -197,6 +199,7 @@ export default function ContactPage() {
         instagramUrl={instagram || undefined}
         facebookUrl={facebook || undefined}
         branches={branches}
+        pickupAddress={pickupAddress || undefined}
       />
     </>
   )
