@@ -15,6 +15,7 @@ export default function TourPage() {
   const [email, setEmail] = useState('')
   const [instagram, setInstagram] = useState('')
   const [facebook, setFacebook] = useState('')
+  const [pickupAddress, setPickupAddress] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -27,6 +28,7 @@ export default function TourPage() {
         setEmail(config.notification_email ?? '')
         setInstagram(config.instagram_url ?? '')
         setFacebook(config.facebook_url ?? '')
+        setPickupAddress((config as any).pickup_address ?? '')
       }
     }
     load()
@@ -77,6 +79,7 @@ export default function TourPage() {
         email={email}
         instagramUrl={instagram || undefined}
         facebookUrl={facebook || undefined}
+        pickupAddress={pickupAddress || undefined}
       />
     </>
   )
