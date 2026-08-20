@@ -235,7 +235,7 @@ export default async function HomePage() {
                 >
                   {imgUrl && (
                     <Image
-                      src={imgUrl.split('?')[0]}
+                      src={imgUrl}
                       alt={`Mood ${i + 1}`}
                       fill
                       className="object-cover"
