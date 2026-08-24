@@ -12,8 +12,7 @@ import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 
 export default async function HomePage() {
-  // cookies() debe llamarse ANTES de cualquier await
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const isLoggedIn = cookieStore.getAll().some(c => c.name.includes('-auth-token') && (c.value?.length ?? 0) > 10)
 
   const supabase = await createServerSupabase()
