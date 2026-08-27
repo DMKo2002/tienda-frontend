@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import AddToCartButton from '@/components/shop/AddToCartButton'
+import ProductPrice from '@/components/shop/ProductPrice'
+import { VariantSelectionProvider } from '@/components/shop/VariantSelectionContext'
 import ProductGallery from '@/components/shop/ProductGallery'
 
 export const dynamic = 'force-dynamic'
@@ -191,69 +193,40 @@ export default async function ProductoPage({ params }: Props) {
                 {product.name}
               </h1>
 
-              <div className="mb-8">
-                {showPrices ? (
-                  <>
-                    {retailPrice ? (
-                      <div>
-                        <p className="text-2xl font-light text-[var(--color-charcoal)]">
-                          {formatPrice(retailPrice!)}
-                        </p>
-                        {retailCompareAt && (
-                          <p className="text-sm text-[var(--color-stone)] line-through mt-0.5">
-                            {formatPrice(retailCompareAt)}
-                          </p>
-                        )}
-                      </div>
-                    ) : !(isWholesaleUser && wholesaleRule) ? (
-                      <p className="text-sm text-[var(--color-stone)]">
-                        Producto solo por mayor
-                      </p>
-                    ) : null}
-                    {isWholesaleUser && wholesaleRule && (
-                      <p className="text-sm text-[var(--color-stone)] mt-1">
-                        Precio mayorista: {formatPrice(wholesaleRule.price)}
-                      </p>
-                    )}
-                  </>
-                ) : isRetailUser ? (
-                  <p className="text-sm text-[var(--color-stone)]">
-                    Necesitás una cuenta mayorista para ver el precio
-                  </p>
-                ) : (
-                  <a
-                    href="/cuenta/login"
-                    className="inline-flex items-center gap-1.5 text-sm text-[var(--color-stone)] hover:text-[var(--color-charcoal)] transition-colors underline"
-                  >
-                    {priceVisibility === 'wholesale_only'
-                      ? 'Precio disponible solo para mayoristas'
-                      : 'Iniciá sesión para ver el precio'}
-                  </a>
-                )}
-              </div>
+              <VariantSelectionProvider sizes={sizes as string[]} colors={colors as string[]}>
+                <ProductPrice
+                  variants={pricedVariants as any}
+                  sizes={sizes as string[]}
+                  colors={colors as string[]}
+                  showPrices={showPrices}
+                  isWholesaleUser={isWholesaleUser}
+                  isRetailUser={isRetailUser}
+                  priceVisibility={priceVisibility}
+                />
 
-              <div className="w-full h-px bg-[var(--color-border)] mb-8" />
+                <div className="w-full h-px bg-[var(--color-border)] mb-8" />
 
-              <AddToCartButton
-                product={{
-                  id: product.id,
-                  name: product.name,
-                  variants: pricedVariants,
-                  coverUrl: images[0]?.url ?? null,
-                  max_installments: (product as any).max_installments ?? null,
-                }}
-                sizes={sizes as string[]}
-                colors={colors as string[]}
-                showPrices={showPrices}
-                isWholesale={isWholesaleUser}
-                ignoreStock={Boolean((config as any)?.ignore_stock)}
-                interestFreeInstallments={(config as any)?.interest_free_installments ?? null}
-                minQty={(product as any).min_qty ?? (config as any)?.min_qty_per_variant ?? 1}
-                columnType={(config as any)?.variant_column_type === 'text' ? 'text' : 'color'}
-                rowLabel={(product as any)?.row_label || (config as any)?.variant_row_label || ''}
-                columnLabel={(product as any)?.column_label || (config as any)?.variant_column_label || ''}
-                attrConfig={(config as any)?.variant_attributes ?? []}
-              />
+                <AddToCartButton
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    variants: pricedVariants,
+                    coverUrl: images[0]?.url ?? null,
+                    max_installments: (product as any).max_installments ?? null,
+                  }}
+                  sizes={sizes as string[]}
+                  colors={colors as string[]}
+                  showPrices={showPrices}
+                  isWholesale={isWholesaleUser}
+                  ignoreStock={Boolean((config as any)?.ignore_stock)}
+                  interestFreeInstallments={(config as any)?.interest_free_installments ?? null}
+                  minQty={(product as any).min_qty ?? (config as any)?.min_qty_per_variant ?? 1}
+                  columnType={(config as any)?.variant_column_type === 'text' ? 'text' : 'color'}
+                  rowLabel={(product as any)?.row_label || (config as any)?.variant_row_label || ''}
+                  columnLabel={(product as any)?.column_label || (config as any)?.variant_column_label || ''}
+                  attrConfig={(config as any)?.variant_attributes ?? []}
+                />
+              </VariantSelectionProvider>
 
               <div className="w-full h-px bg-[var(--color-border)] my-8" />
 
