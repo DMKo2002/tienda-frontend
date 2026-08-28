@@ -25,7 +25,7 @@ export default function TourPage() {
         setLogoUrl(config.logo_url)
         setTourUrl((config as any).video_360_url ?? null)
         setWhatsapp(config.whatsapp_number ?? '')
-        setEmail(config.notification_email ?? '')
+        setEmail(config.contact_email ?? '')
         setInstagram(config.instagram_url ?? '')
         setFacebook(config.facebook_url ?? '')
         setPickupAddress((config as any).pickup_address ?? '')
