@@ -75,10 +75,10 @@ export default function Footer({
   return (
     <footer className="bg-white text-[var(--color-stone)] mt-24 border-t border-[var(--color-border)]">
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
+        <div className="flex flex-col md:flex-row md:flex-wrap md:items-start gap-10">
 
           {/* Marca + social */}
-          <div className="md:col-span-1">
+          <div className="md:flex-shrink-0">
             {logoUrl ? (
               <span className="relative block h-10 w-40 mb-4">
                 <Image
@@ -120,6 +120,8 @@ export default function Footer({
               </div>
             )}
           </div>
+
+          <div className="flex flex-col sm:flex-row flex-wrap gap-x-10 gap-y-8 md:ml-auto">
 
           {/* Links tienda */}
           <div>
@@ -194,6 +196,8 @@ export default function Footer({
               </ul>
             </div>
           )}
+
+          </div>
 
         </div>
 
